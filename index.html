@@ -118,6 +118,10 @@ p{margin:0}
 .sold .tag{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--slate)}
 .sold .price{font-family:var(--serif);font-size:26px;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
 .sold .where{font-size:14px;color:var(--muted)}
+a.sold{text-decoration:none;color:inherit;transition:border-color .15s,box-shadow .15s,transform .15s}
+a.sold:hover{border-color:var(--slate);box-shadow:0 8px 24px rgba(31,31,31,.10);transform:translateY(-2px)}
+.sold .view{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:13px;font-weight:700;color:var(--slate)}
+@media (prefers-reduced-motion:reduce){a.sold:hover{transform:none}}
 @media (max-width:960px){.sold-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:440px){.sold-grid{grid-template-columns:1fr}}
 .team-note{margin-top:28px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
@@ -261,22 +265,22 @@ footer .wrap{display:flex;flex-direction:column;gap:18px;align-items:center;text
         <div class="stat"><strong>5+</strong><span>Years in business</span></div>
       </div>
       <div class="sold-grid">
-        <article class="sold">
+        <a class="sold" href="https://www.zillow.com/homedetails/16779-Willow-Cir-Fountain-Valley-CA-92708/25256878_zpid/" target="_blank" rel="noopener">
           <img src="images/willow.jpg" alt="Sold home on Willow Circle, Fountain Valley" width="525" height="340" loading="lazy">
-          <div><span class="tag">Sold</span><span class="price">$1,625,000</span><span class="where">Willow Circle · Fountain Valley</span></div>
-        </article>
-        <article class="sold">
+          <div><span class="tag">Sold</span><span class="price">$1,625,000</span><span class="where">Willow Circle · Fountain Valley</span><span class="view">View on Zillow <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></span></div>
+        </a>
+        <a class="sold" href="https://www.zillow.com/homedetails/8840-Mockingbird-Cir-Fountain-Valley-CA-92708/25211451_zpid/" target="_blank" rel="noopener">
           <img src="images/mockingbird.jpg" alt="Sold home on Mockingbird Circle, Fountain Valley" width="525" height="348" loading="lazy">
-          <div><span class="tag">Sold</span><span class="price">$1,765,000</span><span class="where">Mockingbird Circle · Fountain Valley</span></div>
-        </article>
-        <article class="sold">
+          <div><span class="tag">Sold</span><span class="price">$1,765,000</span><span class="where">Mockingbird Circle · Fountain Valley</span><span class="view">View on Zillow <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></span></div>
+        </a>
+        <a class="sold" href="https://www.zillow.com/homedetails/10891-El-Paso-Ave-Fountain-Valley-CA-92708/25298195_zpid/" target="_blank" rel="noopener">
           <img src="images/el-paso.jpg" alt="Sold home on El Paso Avenue, Fountain Valley" width="525" height="348" loading="lazy">
-          <div><span class="tag">Sold</span><span class="price">$1,720,000</span><span class="where">El Paso Avenue · Fountain Valley</span></div>
-        </article>
-        <article class="sold">
+          <div><span class="tag">Sold</span><span class="price">$1,720,000</span><span class="where">El Paso Avenue · Fountain Valley</span><span class="view">View on Zillow <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></span></div>
+        </a>
+        <a class="sold" href="https://www.zillow.com/homedetails/212-Baltimore-Ave-Huntington-Beach-CA-92648/134517087_zpid/" target="_blank" rel="noopener">
           <img src="images/baltimore.jpg" alt="Sold home on Baltimore Avenue, Huntington Beach" width="465" height="348" loading="lazy">
-          <div><span class="tag">Sold</span><span class="price">$2,850,000</span><span class="where">Baltimore Avenue · Huntington Beach</span></div>
-        </article>
+          <div><span class="tag">Sold</span><span class="price">$2,850,000</span><span class="where">Baltimore Avenue · Huntington Beach</span><span class="view">View on Zillow <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></span></div>
+        </a>
       </div>
       <div class="team-note">
         <p>These are just a few showcased sales. Production figures and sales shown reflect Moein Group team transactions.</p>
