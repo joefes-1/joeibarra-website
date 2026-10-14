@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Joseph Ibarra Real Estate</title>
+<meta name="description" content="Joseph Ibarra, REALTOR® with First Team Real Estate and the Moein Group. Free home valuations in Huntington Beach and across Orange County.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Lato:wght@400;700&display=swap">
+<style>
+/* Layout: split hero (intro + headshot) → full-width slate valuation band with the form → team numbers → recent sales → how I help → contact */
+:root{
+  --paper:#FFFFFF;
+  --cream:#F6F1E7;
+  --line:#E4DED2;
+  --ink:#1F1F1F;
+  --body:#3A3A3A;
+  --muted:#5E5A53;
+  --slate:#3F5266;
+  --slate-deep:#2C3B4A;
+  --slate-tint:#E3E8EE;
+  --serif:'EB Garamond', Garamond, 'Times New Roman', serif;
+  --sans:Lato, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --wrap:1120px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{background:var(--paper);color:var(--body);font-family:var(--sans);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:var(--slate)}
+a:hover{color:var(--slate-deep)}
+:focus-visible{outline:3px solid var(--slate);outline-offset:3px;border-radius:4px}
+h1,h2,h3{font-family:var(--serif);font-weight:500;color:var(--ink);margin:0;text-wrap:balance;line-height:1.08}
+p{margin:0}
+.wrap{max-width:var(--wrap);margin:0 auto;padding-inline:clamp(16px,4vw,40px)}
+.eyebrow{font-size:12px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--slate)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 24px;border-radius:999px;font-weight:700;font-size:15px;text-decoration:none;border:1.5px solid transparent;cursor:pointer;font-family:var(--sans);transition:background .15s,color .15s}
+.btn-solid{background:var(--slate);color:#fff}
+.btn-solid:hover{background:var(--slate-deep);color:#fff}
+.btn-ghost{border-color:var(--slate);color:var(--slate);background:transparent}
+.btn-ghost:hover{background:var(--slate);color:#fff}
+
+/* Header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:68px;flex-wrap:wrap;padding-block:8px}
+.brand{font-family:var(--serif);font-size:24px;color:var(--ink);text-decoration:none;line-height:1}
+.brand small{display:block;font-family:var(--sans);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:5px;font-weight:700}
+.nav{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.nav a{text-decoration:none;font-size:14px;font-weight:700;color:var(--body)}
+.nav a:hover{color:var(--slate)}
+.nav .btn{min-height:42px;padding:0 18px;font-size:14px;color:#fff}
+@media (max-width:760px){.nav a.hide-sm{display:none}}
+
+/* Hero */
+.hero{padding-block:clamp(40px,7vw,88px)}
+.hero .wrap{display:block}
+.intro-id{display:flex;align-items:center;gap:14px}
+.intro-id img{width:64px;height:64px;border-radius:10px;object-fit:cover;flex:none}
+.intro-id div{display:flex;flex-direction:column;gap:2px}
+.intro-id strong{font-family:var(--serif);font-weight:500;font-size:21px;color:var(--ink);line-height:1.1}
+.hero-copy{display:flex;flex-direction:column;gap:20px;min-width:0}
+.hero h1{font-size:clamp(42px,6.2vw,72px)}
+.hero p.lead{font-family:var(--serif);font-size:clamp(20px,2.1vw,23px);line-height:1.45;color:var(--body);max-width:34em}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+.portrait{position:relative}
+.portrait img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:16px}
+.portrait figcaption{position:absolute;left:16px;bottom:16px;background:#fff;border-radius:12px;padding:10px 14px;font-size:13px;line-height:1.35;color:var(--body);box-shadow:0 6px 20px rgba(31,31,31,.12)}
+.portrait figcaption strong{display:block;font-family:var(--serif);font-weight:500;font-size:18px;color:var(--ink)}
+
+/* Valuation band */
+.value{background:var(--slate);color:#fff;padding-block:clamp(48px,7vw,84px);scroll-margin-top:72px}
+.value .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:clamp(28px,5vw,64px);align-items:start}
+.value-copy{display:flex;flex-direction:column;gap:18px;min-width:0}
+.value .eyebrow{color:var(--slate-tint)}
+.value h2{color:#fff;font-size:clamp(38px,5vw,58px)}
+.value-copy p{color:#F1F3F6;max-width:30em}
+.steps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:14px}
+.steps li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start;color:#F1F3F6;font-size:15.5px}
+.steps b{display:inline-flex;width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,.55);align-items:center;justify-content:center;font-family:var(--serif);font-size:18px;font-weight:500;color:#fff}
+.steps span strong{color:#fff;display:block}
+.form-card{background:#fff;color:var(--body);border-radius:20px;padding:clamp(22px,3.5vw,34px);display:flex;flex-direction:column;gap:16px;min-width:0}
+.form-card h3{font-size:28px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:700;color:var(--ink)}
+.field label .opt{font-weight:400;color:var(--muted)}
+.field input,.field select,.field textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:1.5px solid #CFC8BA;border-radius:10px;padding:12px 14px;min-height:48px;width:100%}
+.field textarea{min-height:88px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--slate);box-shadow:0 0 0 3px var(--slate-tint)}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:520px){.row2{grid-template-columns:1fr}}
+.form-card .btn{width:100%;margin-top:4px}
+.fine{font-size:12px;color:var(--muted);line-height:1.5}
+.form-done{display:flex;flex-direction:column;gap:12px;padding-block:24px;text-align:center;align-items:center}
+.form-done h3{font-size:30px}
+.form-note{font-size:14px;color:#8A3B2B;font-weight:700}
+.hp{position:absolute;left:-9999px}
+
+/* Team numbers */
+.team{padding-block:clamp(56px,8vw,96px)}
+.section-head{display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center;margin-bottom:32px}
+.section-head h2{font-size:clamp(34px,4.4vw,48px)}
+.section-head p{max-width:36em;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.stat{background:var(--cream);border-radius:16px;padding:22px 16px;text-align:center;display:flex;flex-direction:column;gap:6px}
+.stat strong{font-family:var(--serif);font-weight:500;font-size:clamp(40px,5vw,54px);line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+@media (max-width:520px){.stats{grid-template-columns:1fr}}
+
+.sold-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:40px}
+.sold{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
+.sold img{width:100%;aspect-ratio:3/2;object-fit:cover}
+.sold div{padding:12px 16px 16px;display:flex;flex-direction:column;gap:2px}
+.sold .tag{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--slate)}
+.sold .price{font-family:var(--serif);font-size:26px;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
+.sold .where{font-size:14px;color:var(--muted)}
+@media (max-width:960px){.sold-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:440px){.sold-grid{grid-template-columns:1fr}}
+.team-note{margin-top:28px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
+.team-note p{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--muted);max-width:40em}
+.team-note .btn{min-height:44px;font-size:14px}
+
+/* How I help */
+.help{background:var(--cream);padding-block:clamp(56px,8vw,96px)}
+.help-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(20px,3vw,36px)}
+.help-item{display:flex;flex-direction:column;gap:10px;border-top:2px solid var(--slate);padding-top:18px;min-width:0}
+.help-item h3{font-size:28px}
+.help-item p{font-size:16px}
+@media (max-width:760px){.help-grid{grid-template-columns:1fr}}
+.areas{margin-top:40px;text-align:center;font-size:15px;color:var(--muted)}
+.areas strong{color:var(--ink)}
+
+/* Contact */
+.contact{padding-block:clamp(56px,8vw,96px)}
+.contact .wrap{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(24px,4vw,48px);align-items:center}
+.contact img.head{width:180px;height:180px;object-fit:cover;border-radius:18px}
+.contact-copy{display:flex;flex-direction:column;gap:12px;min-width:0}
+.contact h2{font-size:clamp(34px,4.4vw,48px)}
+.contact-lines{display:flex;flex-direction:column;gap:4px;font-size:17px}
+.contact-lines a{font-weight:700;text-decoration:none}
+.contact-lines span{color:var(--muted)}
+@media (max-width:620px){.contact .wrap{grid-template-columns:1fr}.contact img.head{width:140px;height:140px}}
+
+footer{border-top:1px solid var(--line);padding-block:32px 40px}
+footer .wrap{display:flex;flex-direction:column;gap:18px;align-items:center;text-align:center}
+.logos{display:flex;align-items:center;gap:20px}
+.logos img{height:48px;width:auto}
+.logos i{width:1px;height:44px;background:var(--line)}
+.legal{font-size:12px;color:var(--muted);line-height:1.6;max-width:62em}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top">Joseph Ibarra<small>REALTOR® · First Team Real Estate</small></a>
+    <nav class="nav" aria-label="Main">
+      <a class="hide-sm" href="#about">About</a>
+      <a class="hide-sm" href="#sold">Recent sales</a>
+      <a class="hide-sm" href="#contact">Contact</a>
+      <a href="book.html">Book a consultation</a>
+      <a class="btn btn-solid" href="#home-value">What's my home worth?</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero" id="about">
+    <div class="wrap">
+      <div class="hero-copy">
+        <div class="intro-id">
+          <img src="images/joseph-ibarra.jpg" alt="Joseph Ibarra" width="64" height="64">
+          <div><strong>Joseph Ibarra</strong><span class="eyebrow">Huntington Beach · Orange County</span></div>
+        </div>
+        <h1>Hey, neighbor. I'm Joe.</h1>
+        <p class="lead">Raised in Huntington Beach, I help buyers, sellers, and investors all across Orange County. With First Team Real Estate and the Moein Group, you get one agent who knows you plus a whole team behind your move. My job is to make buying or selling feel clear and straightforward from the very first conversation. Whether you're getting ready to make a move or just curious about how much homes are worth around you, I'm always happy to talk it through.</p>
+        <div class="hero-actions">
+          <a class="btn btn-solid" href="#home-value">Get a free home value</a>
+          <a class="btn btn-ghost" href="book.html">Book a consultation</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="value" id="home-value">
+    <div class="wrap">
+      <div class="value-copy">
+        <div class="eyebrow">Quick &amp; free home valuation</div>
+        <h2>What's your home worth right now?</h2>
+        <p>Online estimates can miss by a lot. I'll look at the real sales near you and put together a number that actually reflects your home.</p>
+        <ol class="steps">
+          <li><b>1</b><span><strong>Share your address</strong>Just the address and the best way to reach you.</span></li>
+          <li><b>2</b><span><strong>I pull the recent sales</strong>Homes like yours, close to yours, that actually sold.</span></li>
+          <li><b>3</b><span><strong>You get your value</strong>No pressure and no obligation. Just the info.</span></li>
+          <li><b>4</b><span><strong>Next steps</strong>We'll discuss what your next step might look like, and you decide if it's wise to move forward.</span></li>
+        </ol>
+      </div>
+
+      <div class="form-card">
+        <form id="valuation-form" name="home-value" method="POST" data-netlify="true" netlify-honeypot="company" style="display:flex;flex-direction:column;gap:16px">
+          <input type="hidden" name="form-name" value="home-value">
+          <p class="hp"><label for="company">Leave this empty</label><input id="company" name="company" tabindex="-1" autocomplete="off"></p>
+          <h3>Get your home value</h3>
+          <div class="field">
+            <label for="address">Property address</label>
+            <input id="address" name="address" autocomplete="street-address" required placeholder="Street, city, ZIP">
+          </div>
+          <div class="field">
+            <label for="name">Your name</label>
+            <input id="name" name="name" autocomplete="name" required>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="phone">Phone</label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel" required>
+            </div>
+            <div class="field">
+              <label for="email">Email <span class="opt">(optional)</span></label>
+              <input id="email" name="email" type="email" autocomplete="email">
+            </div>
+          </div>
+          <div class="field">
+            <label for="timeline">Where are you at?</label>
+            <select id="timeline" name="timeline">
+              <option>Just curious</option>
+              <option>Thinking about selling in the next year</option>
+              <option selected>Ready to sell soon</option>
+              <option>Looking to buy, too</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="notes">Anything I should know? <span class="opt">(optional)</span></label>
+            <textarea id="notes" name="notes" placeholder="Upgrades, remodels, a pool, a new roof…"></textarea>
+          </div>
+          <p class="form-note" id="form-note" hidden></p>
+          <button class="btn btn-solid" type="submit" id="submit-btn">Send me my home value</button>
+          <p class="fine">Your info goes straight to me and is never sold or shared.</p>
+        </form>
+        <div class="form-done" id="form-done" hidden>
+          <div class="eyebrow">Got it</div>
+          <h3>Thanks! I'm on it.</h3>
+          <p>I'll pull the recent sales near you and reach out with your home value. Questions before then? Call or text (714) 507-5438.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="team" id="sold">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">Our team</div>
+        <h2>The Moein Group</h2>
+        <p>I work alongside the Moein Group at First Team Real Estate, so you get one agent who knows you plus a whole team behind your sale.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><strong>$75M</strong><span>In sales in 2026</span></div>
+        <div class="stat"><strong>170+</strong><span>Homes sold</span></div>
+        <div class="stat"><strong>5+</strong><span>Years in business</span></div>
+      </div>
+      <div class="sold-grid">
+        <article class="sold">
+          <img src="images/willow.jpg" alt="Sold home on Willow Circle, Fountain Valley" width="525" height="340" loading="lazy">
+          <div><span class="tag">Sold</span><span class="price">$1,625,000</span><span class="where">Willow Circle · Fountain Valley</span></div>
+        </article>
+        <article class="sold">
+          <img src="images/mockingbird.jpg" alt="Sold home on Mockingbird Circle, Fountain Valley" width="525" height="348" loading="lazy">
+          <div><span class="tag">Sold</span><span class="price">$1,765,000</span><span class="where">Mockingbird Circle · Fountain Valley</span></div>
+        </article>
+        <article class="sold">
+          <img src="images/el-paso.jpg" alt="Sold home on El Paso Avenue, Fountain Valley" width="525" height="348" loading="lazy">
+          <div><span class="tag">Sold</span><span class="price">$1,720,000</span><span class="where">El Paso Avenue · Fountain Valley</span></div>
+        </article>
+        <article class="sold">
+          <img src="images/baltimore.jpg" alt="Sold home on Baltimore Avenue, Huntington Beach" width="465" height="348" loading="lazy">
+          <div><span class="tag">Sold</span><span class="price">$2,850,000</span><span class="where">Baltimore Avenue · Huntington Beach</span></div>
+        </article>
+      </div>
+      <div class="team-note">
+        <p>These are just a few showcased sales. Production figures and sales shown reflect Moein Group team transactions.</p>
+        <a class="btn btn-ghost" id="zillow-link" href="https://www.zillow.com/profile/MoeinTehran" target="_blank" rel="noopener">See all Moein Group sales on Zillow <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="help">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow">How I help</div>
+        <h2>Clear, confident, and straightforward</h2>
+        <p>My job is to make buying or selling feel all of these from the very first conversation.</p>
+      </div>
+      <div class="help-grid">
+        <div class="help-item">
+          <h3>Selling</h3>
+          <p>We'll start with what your home is really worth, then make a plan to get it sold for the best price with the least stress.</p>
+          <a href="#home-value">Get your home value</a>
+        </div>
+        <div class="help-item">
+          <h3>Buying</h3>
+          <p>I'll walk you through it step by step: the neighborhoods, the financing, putting together a strong offer, and a clean close.</p>
+          <a href="book.html">Book a consultation</a>
+        </div>
+        <div class="help-item">
+          <h3>Investing</h3>
+          <p>Looking for a rental or a home that'll appreciate? We'll look at the numbers together and find what fits your goals.</p>
+          <a href="book.html">Book a consultation</a>
+        </div>
+      </div>
+      <p class="areas">Working with buyers and sellers in <strong>Huntington Beach, Newport Beach, Yorba Linda, Santa Ana</strong> and all across Orange County.</p>
+    </div>
+  </section>
+
+  <section class="contact" id="contact">
+    <div class="wrap">
+      <img class="head" src="images/joseph-ibarra.jpg" alt="Joseph Ibarra" width="180" height="180" loading="lazy">
+      <div class="contact-copy">
+        <div class="eyebrow">Get in touch</div>
+        <h2>Call, text, or email anytime.</h2>
+        <div class="contact-lines">
+          <a href="tel:+17145075438">(714) 507-5438</a>
+          <a href="mailto:josephibarra@firstteam.com">josephibarra@firstteam.com</a>
+          <span>First Team Real Estate · 10072 Adams Ave., Huntington Beach, CA 92646</span>
+        </div>
+        <div><a class="btn btn-solid" href="book.html">Book a consultation</a></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="logos">
+      <img src="images/moein-group.png" alt="Moein Group Real Estate">
+      <i aria-hidden="true"></i>
+      <img src="images/first-team.jpg" alt="First Team Real Estate">
+    </div>
+    <p class="legal">Joseph Ibarra, REALTOR® · DRE #02244753 · First Team Real Estate · Moein Group. Production figures and sales shown reflect Moein Group team transactions. If your home is currently listed with another broker, this is not a solicitation of that listing.</p>
+  </div>
+</footer>
+
+<script>
+// Paste the Google Apps Script web app URL here once it's set up
+var GOOGLE_SHEET_URL='https://script.google.com/macros/s/AKfycbyFU6fiptfSZJEEGUeyF4C9amfGEDOd0nw8LeQuKrre3e14Rq-aVmHzUhtQLRDMUX7R/exec';
+(function(){
+  var form=document.getElementById('valuation-form');
+  var done=document.getElementById('form-done');
+  var note=document.getElementById('form-note');
+  var btn=document.getElementById('submit-btn');
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    note.hidden=true;
+    btn.disabled=true;btn.textContent='Sending…';
+    var body=new URLSearchParams(new FormData(form)).toString();
+    if(GOOGLE_SHEET_URL){fetch(GOOGLE_SHEET_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body}).catch(function(){});}
+    fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
+      .then(function(r){
+        if(!r.ok) throw new Error('bad');
+        form.hidden=true;done.hidden=false;
+      })
+      .catch(function(){
+        note.textContent='That didn’t go through. Please try again, or call or text (714) 507-5438.';
+        note.hidden=false;
+      })
+      .finally(function(){btn.disabled=false;btn.textContent='Send me my home value';});
+  });
+})();
+</script>
+</body>
+</html>
