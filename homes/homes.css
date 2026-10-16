@@ -72,6 +72,16 @@ p{margin:0}
 .actions{display:flex;flex-wrap:wrap;gap:10px}
 @media (max-width:520px){.actions .btn{flex:1 1 calc(50% - 5px)}}
 
+/* Batches: fresh picks added after the link was sent, each with a date stamp */
+.group-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0 16px}
+.home + .group-head{margin-top:44px}
+.group-head::after{content:"";flex:1 1 40px;height:1px;background:var(--line);order:3}
+.group-head .stamp{font-size:13px;font-weight:700;color:var(--muted);background:var(--cream);border-radius:999px;padding:4px 12px}
+.group-head.is-fresh .eyebrow{color:#2F7A4F}
+.group-head.is-fresh .stamp{background:#E6F2EA;color:#24603D}
+.fresh-pill{display:inline-flex;align-items:center;gap:6px;background:#E6F2EA;color:#24603D;border-radius:999px;padding:4px 12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.fresh-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:#2F9A5C}
+
 /* Drive leg between tour stops */
 .leg{display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;align-items:center;padding:18px 4px 18px 0;margin-inline:auto;width:100%}
 .leg .line{position:relative;height:100%;min-height:72px;display:flex;justify-content:center}

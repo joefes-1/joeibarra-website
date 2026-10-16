@@ -63,6 +63,7 @@
       '</div>'+
       '<div class="body">'+
         '<div class="headline"><span class="price">'+money(h.price)+'</span>'+
+          (h.added&&!tour?'<span class="fresh-pill">Fresh pick</span>':'')+
           (tour&&h.time?'<span class="time"><span class="btn now-pill" style="min-height:24px;padding:0 10px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-right:8px">Now</span>'+clock(h.time)+'</span>':'')+'</div>'+
         '<div class="addr">'+esc(h.address)+'<span>'+esc(h.city)+'</span></div>'+
         (specs.length?'<ul class="specs">'+specs.join('')+'</ul>':'')+
@@ -72,9 +73,17 @@
       '</div></article>';
   }
 
-  // Pages expire 14 days after `created` (override with expiresDays). Samples never expire.
+  // "2026-10-18" or "2026-10-18T15:30" → Date
+  function parseStamp(s){ return new Date(s.length>10 ? s+':00' : s+'T00:00:00') }
+  function dayLabel(s){ return parseStamp(s).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) }
+  function timeLabel(s){ return s.length>10 ? clock(s.slice(11,16)) : '' }
+
+  // Pages expire 14 days after `created`, or after the newest fresh pick if one was added later
+  // (override with expiresDays). Samples never expire.
   if(D.created && !D.sample){
-    var exp = new Date(D.created+'T00:00:00'); exp.setDate(exp.getDate() + (D.expiresDays || 14));
+    var base = D.created;
+    homes.forEach(function(h){ if(h.added && h.added.slice(0,10) > base) base = h.added.slice(0,10); });
+    var exp = new Date(base+'T00:00:00'); exp.setDate(exp.getDate() + (D.expiresDays || 14));
     if(new Date() >= exp){
       document.title = 'Page expired · Joseph Ibarra';
       root.innerHTML = '<header class="top"><div class="wrap"><a class="brand" href="/">Joseph Ibarra<small>REALTOR® · First Team Real Estate</small></a></div></header>'+
@@ -113,7 +122,29 @@
     '</div></section>';
 
   html += '<section class="list"><div class="wrap">';
-  homes.forEach(function(h,i){ if(tour) html += leg(i); html += card(h,i); });
+  if(tour){
+    homes.forEach(function(h,i){ html += leg(i); html += card(h,i); });
+  } else {
+    // Showcase: homes added after the link went out ("added" stamp) float to the top,
+    // newest batch first, each batch under its own dated header. Originals go last.
+    var keys = [], byKey = {};
+    homes.forEach(function(h){ var k = h.added || ''; if(!byKey[k]){ byKey[k] = []; keys.push(k); } byKey[k].push(h); });
+    keys.sort(function(a,b){ return a===b ? 0 : (a < b ? 1 : -1); }); // newest first, '' (originals) last
+    var hasFresh = keys.some(function(k){ return k; });
+    var dayCount = {}; keys.forEach(function(k){ if(k){ var d=k.slice(0,10); dayCount[d]=(dayCount[d]||0)+1; } });
+    homes = []; keys.forEach(function(k){ homes = homes.concat(byKey[k]); });
+    var n = 0;
+    keys.forEach(function(k){
+      if(hasFresh){
+        var stamp = k
+          ? 'Added ' + dayLabel(k) + (dayCount[k.slice(0,10)]>1 && timeLabel(k) ? ' at ' + timeLabel(k) : '')
+          : (D.created ? 'Sent ' + dayLabel(D.created) : '');
+        html += '<div class="group-head reveal'+(k?' is-fresh':'')+'"><span class="eyebrow">'+(k?'Fresh picks':'Your original picks')+'</span>'+
+                (stamp?'<span class="stamp">'+stamp+'</span>':'')+'</div>';
+      }
+      byKey[k].forEach(function(h){ html += card(h, n++); });
+    });
+  }
   html += '</div></section>';
 
   html += '<section class="contact"><div class="wrap"><div class="eyebrow" style="color:var(--slate-tint)">Questions?</div>'+
