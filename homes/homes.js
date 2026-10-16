@@ -84,8 +84,8 @@
     var base = D.created;
     homes.forEach(function(h){ if(h.added && h.added.slice(0,10) > base) base = h.added.slice(0,10); });
     var exp = new Date(base+'T00:00:00'); exp.setDate(exp.getDate() + (D.expiresDays || 14));
-    // Tours shut off at the end of the day after the tour (same link gets reused for the next tour)
-    if(tour && D.date){ exp = new Date(D.date+'T00:00:00'); exp.setDate(exp.getDate() + 2); }
+    // Tours stay up 2 days after the tour day, then shut off (same link gets reused for the next tour)
+    if(tour && D.date){ exp = new Date(D.date+'T00:00:00'); exp.setDate(exp.getDate() + 3); }
     if(new Date() >= exp){
       document.title = (tour?'Tour wrapped up':'Page expired')+' · Joseph Ibarra';
       root.innerHTML = '<header class="top"><div class="wrap"><a class="brand" href="/">Joseph Ibarra<small>REALTOR® · First Team Real Estate</small></a></div></header>'+
