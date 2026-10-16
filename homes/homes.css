@@ -193,3 +193,12 @@ footer .wrap{display:flex;flex-direction:column;align-items:center;gap:14px;text
 .photo .badge,.photo .status{pointer-events:none}
 .photo-hint{position:absolute;right:14px;bottom:14px;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.94);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;box-shadow:0 4px 14px rgba(31,31,31,.14);transition:background .2s,color .2s}
 .photo-link:hover .photo-hint,.photo-link:focus-visible .photo-hint{background:var(--slate);color:#fff}
+
+/* Open house indicator on past-pick tiles */
+.oh-dot{position:absolute;right:9px;top:9px;width:14px;height:14px;border-radius:50%;background:#E0892E;border:2px solid #fff;box-shadow:0 1px 6px rgba(31,31,31,.25)}
+.oh-legend{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--muted);order:4}
+.oh-legend i{width:10px;height:10px;border-radius:50%;background:#E0892E;display:inline-block}
+@media (prefers-reduced-motion:no-preference){
+  .oh-dot::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid #E0892E;opacity:0;animation:ohPulse 2.4s ease-out infinite}
+  @keyframes ohPulse{0%{opacity:.7;transform:scale(.6)}100%{opacity:0;transform:scale(1.4)}}
+}
