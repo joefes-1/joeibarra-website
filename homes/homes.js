@@ -137,7 +137,7 @@
     keys.forEach(function(k){
       if(hasFresh){
         var stamp = k
-          ? 'Added ' + dayLabel(k) + (dayCount[k.slice(0,10)]>1 && timeLabel(k) ? ' at ' + timeLabel(k) : '')
+          ? 'Added ' + dayLabel(k) + ((dayCount[k.slice(0,10)]>1 || k.slice(0,10)===D.created) && timeLabel(k) ? ' at ' + timeLabel(k) : '')
           : (D.created ? 'Sent ' + dayLabel(D.created) : '');
         html += '<div class="group-head reveal'+(k?' is-fresh':'')+'"><span class="eyebrow">'+(k?'Fresh picks':'Your original picks')+'</span>'+
                 (stamp?'<span class="stamp">'+stamp+'</span>':'')+'</div>';
