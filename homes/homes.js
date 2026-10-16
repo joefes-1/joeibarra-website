@@ -72,6 +72,21 @@
       '</div></article>';
   }
 
+  // Pages expire 14 days after `created` (override with expiresDays). Samples never expire.
+  if(D.created && !D.sample){
+    var exp = new Date(D.created+'T00:00:00'); exp.setDate(exp.getDate() + (D.expiresDays || 14));
+    if(new Date() >= exp){
+      document.title = 'Page expired · Joseph Ibarra';
+      root.innerHTML = '<header class="top"><div class="wrap"><a class="brand" href="/">Joseph Ibarra<small>REALTOR® · First Team Real Estate</small></a></div></header>'+
+        '<main><section class="intro"><div class="wrap"><div class="eyebrow">This page has expired</div>'+
+        '<h1>These homes may have sold or changed price.</h1>'+
+        '<p style="font-size:18px;max-width:30em">Text me and I\'ll send over an updated list with what\'s available right now.</p>'+
+        '<div class="actions" style="margin-top:8px"><a class="btn btn-solid" href="sms:'+PHONE+'">'+I.msg+'Text '+PHONE_TXT+'</a><a class="btn btn-ghost" href="/">Visit my site</a></div>'+
+        '</div></section></main>';
+      return;
+    }
+  }
+
   var html = '';
   if(D.sample) html += '<div class="sample-flag">Sample page. Homes shown are past Moein Group sales used as examples.</div>';
   html += '<header class="top"><div class="wrap"><a class="brand" href="/">Joseph Ibarra<small>REALTOR® · First Team Real Estate</small></a>'+
