@@ -84,12 +84,14 @@
     var base = D.created;
     homes.forEach(function(h){ if(h.added && h.added.slice(0,10) > base) base = h.added.slice(0,10); });
     var exp = new Date(base+'T00:00:00'); exp.setDate(exp.getDate() + (D.expiresDays || 14));
+    // Tours shut off at the end of the day after the tour (same link gets reused for the next tour)
+    if(tour && D.date){ exp = new Date(D.date+'T00:00:00'); exp.setDate(exp.getDate() + 2); }
     if(new Date() >= exp){
-      document.title = 'Page expired · Joseph Ibarra';
+      document.title = (tour?'Tour wrapped up':'Page expired')+' · Joseph Ibarra';
       root.innerHTML = '<header class="top"><div class="wrap"><a class="brand" href="/">Joseph Ibarra<small>REALTOR® · First Team Real Estate</small></a></div></header>'+
-        '<main><section class="intro"><div class="wrap"><div class="eyebrow">This page has expired</div>'+
-        '<h1>These homes may have sold or changed price.</h1>'+
-        '<p style="font-size:18px;max-width:30em">Text me and I\'ll send over an updated list with what\'s available right now.</p>'+
+        '<main><section class="intro"><div class="wrap"><div class="eyebrow">'+(tour?'This tour has wrapped up':'This page has expired')+'</div>'+
+        '<h1>'+(tour?'Thanks for coming out!':'These homes may have sold or changed price.')+'</h1>'+
+        '<p style="font-size:18px;max-width:30em">'+(tour?'Text me what you thought of the homes, or if you want to set up another tour.':'Text me and I\'ll send over an updated list with what\'s available right now.')+'</p>'+
         '<div class="actions" style="margin-top:8px"><a class="btn btn-solid" href="sms:'+PHONE+'">'+I.msg+'Text '+PHONE_TXT+'</a><a class="btn btn-ghost" href="/">Visit my site</a></div>'+
         '</div></section></main>';
       return;
