@@ -79,6 +79,20 @@
       '</div></article>';
   }
 
+  function tile(h,i){
+    var bits = [];
+    if(h.beds!=null) bits.push(esc(h.beds)+' bd');
+    if(h.baths!=null) bits.push(esc(h.baths)+' ba');
+    if(h.sqft) bits.push(Number(h.sqft).toLocaleString('en-US')+' sq ft');
+    var full = card(h,i).replace('class="home reveal', 'class="home').replace(/ id="stop-\d+"/, '');
+    return '<article class="tile reveal" tabindex="0" aria-label="'+esc(h.address)+', '+money(h.price)+'. Show details">'+
+      '<div class="tile-photo">'+(h.photo?'<img src="'+esc(h.photo)+'" alt="" loading="lazy">':'')+'<span class="tile-num">'+(i+1)+'</span></div>'+
+      '<div class="tile-body"><span class="tile-price">'+money(h.price)+'</span><span class="tile-addr">'+esc(h.address)+'</span>'+
+        '<span class="tile-specs">'+bits.join(' · ')+'</span><span class="tile-more">See details</span></div>'+
+      '<div class="tile-pop"><button class="tile-close" type="button">Close</button>'+full+'</div>'+
+    '</article>';
+  }
+
   // "2026-10-18" or "2026-10-18T15:30" → Date
   function parseStamp(s){ return new Date(s.length>10 ? s+':00' : s+'T00:00:00') }
   function dayLabel(s){ return parseStamp(s).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) }
@@ -152,9 +166,14 @@
       }
       // older homes sit in a slightly narrower column once fresh picks exist
       var past = hasFresh && !k;
-      if(past) html += '<div class="past-group">';
-      byKey[k].forEach(function(h){ html += card(h, n++); });
-      if(past) html += '</div>';
+      if(past){
+        // past picks: compact grid; hover (computer) or tap (phone) opens the full card
+        html += '<div class="past-grid">';
+        byKey[k].forEach(function(h){ html += tile(h, n++); });
+        html += '</div>';
+      } else {
+        byKey[k].forEach(function(h){ html += card(h, n++); });
+      }
     });
   }
   html += '</div></section>';
@@ -168,6 +187,26 @@
     '<p class="legal">Joseph Ibarra, REALTOR® · DRE #02244753 · First Team Real Estate · Moein Group. Listing information is deemed reliable but not guaranteed and should be independently verified.</p></div></footer>';
 
   root.innerHTML = html;
+
+  // Past-pick tiles: on hover devices, keep the pop-up inside the grid edges;
+  // on touch devices, tap to open the full card in place, tap Close (or the tile again) to collapse
+  var hoverable = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  document.querySelectorAll('.tile').forEach(function(t){
+    if(hoverable){
+      t.addEventListener('mouseenter', function(){
+        var g = t.parentNode.getBoundingClientRect(), r = t.getBoundingClientRect();
+        t.dataset.align = (r.left - g.left < 10) ? 'left' : (g.right - r.right < 10 ? 'right' : 'center');
+      });
+    } else {
+      t.addEventListener('click', function(e){
+        if(e.target.closest('a')) return;               // let links in the full card work
+        var open = t.classList.contains('open');
+        if(open && !e.target.closest('.tile-close') && e.target.closest('.tile-pop')) return;
+        t.classList.toggle('open', !open);
+        if(!open) setTimeout(function(){ t.scrollIntoView({behavior:'smooth', block:'start'}); }, 60);
+      });
+    }
+  });
 
   // Tour day: highlight the current stop and fade the ones already seen
   function live(){

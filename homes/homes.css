@@ -84,9 +84,45 @@ p{margin:0}
 /* Fresh cards get a soft green highlight; past picks sit in a slightly narrower column */
 .home.is-fresh{border:1.5px solid #8CC7A3;box-shadow:0 0 0 4px #EEF7F1,0 10px 28px rgba(36,96,61,.08)}
 .home.is-fresh + .home.is-fresh{margin-top:28px}
-.past-group{width:92%;margin-inline:auto}
-.past-group .price{font-size:clamp(26px,4vw,32px)}
-@media (max-width:520px){.past-group{width:95%}}
+/* Past picks grid: compact tiles that open into the full card */
+.past-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:640px){.past-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
+.tile{position:relative;border:1px solid var(--line);border-radius:16px;background:#fff;cursor:pointer;outline:none}
+.tile-photo{position:relative;border-radius:15px 15px 0 0;overflow:hidden;background:var(--cream)}
+.tile-photo img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.tile-num{position:absolute;left:8px;top:8px;width:24px;height:24px;border-radius:50%;background:#fff;color:var(--ink);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(31,31,31,.18)}
+.tile-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.tile-price{font-family:var(--serif);font-size:22px;color:var(--ink);line-height:1.15;font-variant-numeric:tabular-nums}
+.tile-addr{font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile-specs{font-size:12.5px;color:var(--muted)}
+.tile-more{margin-top:6px;font-size:12px;font-weight:700;color:var(--slate)}
+.tile-pop{display:none}
+.tile-close{display:none}
+.tile-pop .home{margin:0}
+
+/* Computer: hover or keyboard focus pops the full card up over the grid */
+@media (hover:hover) and (pointer:fine){
+  .tile-more::after{content:" ›"}
+  .tile-pop{display:block;position:absolute;top:-14px;left:50%;width:min(460px,92vw);z-index:40;opacity:0;visibility:hidden;
+    transform:translateX(-50%) scale(.94);transform-origin:top center;transition:opacity .2s ease,transform .25s cubic-bezier(.2,.7,.2,1),visibility 0s .25s}
+  .tile[data-align=left] .tile-pop{left:-6px;transform:scale(.94);transform-origin:top left}
+  .tile[data-align=right] .tile-pop{left:auto;right:-6px;transform:scale(.94);transform-origin:top right}
+  .tile:hover,.tile:focus-within{z-index:50}
+  .tile:hover .tile-pop,.tile:focus-within .tile-pop{opacity:1;visibility:visible;transform:translateX(-50%) scale(1);transition-delay:0s}
+  .tile[data-align=left]:hover .tile-pop,.tile[data-align=left]:focus-within .tile-pop,
+  .tile[data-align=right]:hover .tile-pop,.tile[data-align=right]:focus-within .tile-pop{transform:scale(1)}
+  .tile-pop .home{box-shadow:0 24px 60px rgba(31,31,31,.22),0 4px 14px rgba(31,31,31,.10)}
+}
+/* Phone/tablet: tap opens the full card in place across the grid */
+@media not ((hover:hover) and (pointer:fine)){
+  .tile-more::after{content:" ›"}
+  .tile.open{grid-column:1/-1;border:none;background:transparent;cursor:default}
+  .tile.open > .tile-photo,.tile.open > .tile-body{display:none}
+  .tile.open .tile-pop{display:block;animation:popIn .25s cubic-bezier(.2,.7,.2,1)}
+  .tile.open .tile-close{display:inline-flex;margin:0 0 8px auto;float:right;background:var(--slate-tint);color:var(--slate-deep);border:0;border-radius:999px;padding:6px 14px;font:700 13px var(--sans);cursor:pointer}
+  .tile.open .tile-pop .home{clear:both}
+  @keyframes popIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+}
 
 /* Drive leg between tour stops */
 .leg{display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;align-items:center;padding:18px 4px 18px 0;margin-inline:auto;width:100%}
