@@ -56,7 +56,7 @@
     if(!tour) acts += '<a class="btn btn-solid" href="'+gmaps(full(h))+'" target="_blank" rel="noopener">'+I.pin+'Google Maps</a><a class="btn btn-ghost" href="'+apple(full(h))+'" target="_blank" rel="noopener">'+I.pin+'Apple Maps</a>';
     if(h.url) acts += '<a class="btn btn-soft" href="'+esc(h.url)+'" target="_blank" rel="noopener">Full listing '+I.out+'</a>';
     acts += '<a class="btn btn-soft" href="'+sms(h)+'">'+I.msg+'Text me about it</a>';
-    return '<article class="home reveal" id="stop-'+(i+1)+'">'+
+    return '<article class="home reveal'+(h.added&&!tour?' is-fresh':'')+'" id="stop-'+(i+1)+'">'+
       '<div class="photo">'+(h.photo?'<img src="'+esc(h.photo)+'" alt="'+esc(h.address)+'"'+(i>0?' loading="lazy"':'')+'>':'')+
         '<span class="badge"><b>'+(i+1)+'</b>'+(tour?'Stop '+(i+1)+' of '+homes.length:'Home '+(i+1)+' of '+homes.length)+'</span>'+
         (h.status?'<span class="status">'+esc(h.status)+'</span>':'')+
@@ -139,10 +139,14 @@
         var stamp = k
           ? 'Added ' + dayLabel(k) + ((dayCount[k.slice(0,10)]>1 || k.slice(0,10)===D.created) && timeLabel(k) ? ' at ' + timeLabel(k) : '')
           : (D.created ? 'Sent ' + dayLabel(D.created) : '');
-        html += '<div class="group-head reveal'+(k?' is-fresh':'')+'"><span class="eyebrow">'+(k?'Fresh picks':'Your original picks')+'</span>'+
+        html += '<div class="group-head reveal'+(k?' is-fresh':'')+'"><span class="eyebrow">'+(k?'Fresh picks':'Past picks')+'</span>'+
                 (stamp?'<span class="stamp">'+stamp+'</span>':'')+'</div>';
       }
+      // older homes sit in a slightly narrower column once fresh picks exist
+      var past = hasFresh && !k;
+      if(past) html += '<div class="past-group">';
       byKey[k].forEach(function(h){ html += card(h, n++); });
+      if(past) html += '</div>';
     });
   }
   html += '</div></section>';
