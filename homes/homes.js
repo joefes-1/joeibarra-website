@@ -66,7 +66,7 @@
           (tour&&h.time?'<span class="time"><span class="btn now-pill" style="min-height:24px;padding:0 10px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-right:8px">Now</span>'+clock(h.time)+'</span>':'')+'</div>'+
         '<div class="addr">'+esc(h.address)+'<span>'+esc(h.city)+'</span></div>'+
         (specs.length?'<ul class="specs">'+specs.join('')+'</ul>':'')+
-        (h.why?'<div class="why"><span class="eyebrow">Why I picked this one</span><p>'+esc(h.why)+'</p></div>':'')+
+        (h.why?'<div class="why"><span class="eyebrow">'+esc(D.whyLabel||'Why I picked this one')+'</span><p>'+esc(h.why)+'</p></div>':'')+
         (h.headsUp?'<p class="heads-up"><strong>Heads up:</strong> '+esc(h.headsUp)+'</p>':'')+
         '<div class="actions">'+acts+'</div>'+
       '</div></article>';
