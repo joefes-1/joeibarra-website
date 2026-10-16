@@ -133,3 +133,9 @@ footer .wrap{display:flex;flex-direction:column;align-items:center;gap:14px;text
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 @media print{.top .btn,.actions,.leg .actions,.route-all,.sample-flag{display:none!important}.home{break-inside:avoid}}
+
+/* Clickable listing photos (showcase pages) */
+.photo-link{display:block;color:inherit;text-decoration:none}
+.photo .badge,.photo .status{pointer-events:none}
+.photo-hint{position:absolute;right:14px;bottom:14px;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.94);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;box-shadow:0 4px 14px rgba(31,31,31,.14);transition:background .2s,color .2s}
+.photo-link:hover .photo-hint,.photo-link:focus-visible .photo-hint{background:var(--slate);color:#fff}

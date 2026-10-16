@@ -57,7 +57,13 @@
     if(h.url) acts += '<a class="btn btn-soft" href="'+esc(h.url)+'" target="_blank" rel="noopener">Full listing '+I.out+'</a>';
     acts += '<a class="btn btn-soft" href="'+sms(h)+'">'+I.msg+'Text me about it</a>';
     return '<article class="home reveal'+(h.added&&!tour?' is-fresh':'')+'" id="stop-'+(i+1)+'">'+
-      '<div class="photo">'+(h.photo?'<img src="'+esc(h.photo)+'" alt="'+esc(h.address)+'"'+(i>0?' loading="lazy"':'')+'>':'')+
+      '<div class="photo">'+(h.photo?(function(){
+          var img = '<img src="'+esc(h.photo)+'" alt="'+esc(h.address)+'"'+(i>0?' loading="lazy"':'')+'>';
+          // showcase pages: the whole photo opens the listing on Zillow
+          return (!tour && h.url)
+            ? '<a class="photo-link" href="'+esc(h.url)+'" target="_blank" rel="noopener" aria-label="View '+esc(h.address)+' on Zillow">'+img+'<span class="photo-hint">View on Zillow '+I.out+'</span></a>'
+            : img;
+        })():'')+
         '<span class="badge"><b>'+(i+1)+'</b>'+(tour?'Stop '+(i+1)+' of '+homes.length:'Home '+(i+1)+' of '+homes.length)+'</span>'+
         (h.status?'<span class="status">'+esc(h.status)+'</span>':'')+
       '</div>'+
