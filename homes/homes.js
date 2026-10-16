@@ -79,12 +79,6 @@
       '</div></article>';
   }
 
-  // true if the home has an open house that hasn't ended yet (openHouses: [{date, end}])
-  function hasUpcomingOH(h){
-    var now = new Date();
-    return (h.openHouses||[]).some(function(o){ return new Date(o.date+'T'+(o.end||'23:59')+':00') > now; });
-  }
-
   function tile(h,i){
     var bits = [];
     if(h.beds!=null) bits.push(esc(h.beds)+' bd');
@@ -92,8 +86,7 @@
     if(h.sqft) bits.push(Number(h.sqft).toLocaleString('en-US')+' sq ft');
     var full = card(h,i).replace('class="home reveal', 'class="home').replace(/ id="stop-\d+"/, '');
     return '<article class="tile reveal" tabindex="0" aria-label="'+esc(h.address)+', '+money(h.price)+'. Show details">'+
-      '<div class="tile-photo">'+(h.photo?'<img src="'+esc(h.photo)+'" alt="" loading="lazy">':'')+'<span class="tile-num">'+(i+1)+'</span>'+
-        (hasUpcomingOH(h)?'<span class="oh-dot" title="Open house coming up" aria-label="Open house coming up"></span>':'')+'</div>'+
+      '<div class="tile-photo">'+(h.photo?'<img src="'+esc(h.photo)+'" alt="" loading="lazy">':'')+'<span class="tile-num">'+(i+1)+'</span></div>'+
       '<div class="tile-body"><span class="tile-price">'+money(h.price)+'</span><span class="tile-addr">'+esc(h.address)+'</span>'+
         '<span class="tile-specs">'+bits.join(' · ')+'</span><span class="tile-more">See details</span></div>'+
       '<div class="tile-pop"><button class="tile-close" type="button">Close</button>'+full+'</div>'+
@@ -168,9 +161,8 @@
         var stamp = k
           ? 'Added ' + dayLabel(k) + ((dayCount[k.slice(0,10)]>1 || k.slice(0,10)===D.created) && timeLabel(k) ? ' at ' + timeLabel(k) : '')
           : (D.created ? 'Sent ' + dayLabel(D.created) : '');
-        var legend = (!k && byKey[k].some(hasUpcomingOH)) ? '<span class="oh-legend"><i></i>Open house coming up</span>' : '';
         html += '<div class="group-head reveal'+(k?' is-fresh':'')+'"><span class="eyebrow">'+(k?'Fresh picks':'Past picks')+'</span>'+
-                (stamp?'<span class="stamp">'+stamp+'</span>':'')+legend+'</div>';
+                (stamp?'<span class="stamp">'+stamp+'</span>':'')+'</div>';
       }
       // older homes sit in a slightly narrower column once fresh picks exist
       var past = hasFresh && !k;
