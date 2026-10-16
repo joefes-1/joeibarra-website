@@ -28,13 +28,12 @@
   function hid(h){ return String(h.mls || h.address).replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60) }
   var RX = {
     love:  {icon:'\u2764\uFE0F', label:'Love it',    badge: WHO+' loved it'},
-    maybe: {icon:'\uD83E\uDD14', label:'Maybe',      badge: WHO+(D.client?' is':' are')+' a maybe'},
     pass:  {icon:'\uD83D\uDC4E', label:'Not for me', badge: 'Not for '+(D.client||'you')}
   };
   function reactBlock(h){
     if(!REACT) return '';
     return '<div class="react" data-home="'+hid(h)+'"><span class="react-q">What do you think?</span>'+
-      '<div class="react-btns">'+['love','maybe','pass'].map(function(k){
+      '<div class="react-btns">'+['love','pass'].map(function(k){
         return '<button type="button" class="react-btn" data-r="'+k+'" aria-pressed="false"><span aria-hidden="true">'+RX[k].icon+'</span>'+RX[k].label+'</button>';
       }).join('')+'</div>'+
       '<form class="react-note" hidden><input type="text" maxlength="300" placeholder="Want to tell me why? (optional)" aria-label="Note for Joseph"><button type="submit" class="btn btn-soft">Send</button></form>'+
@@ -151,7 +150,7 @@
   var meta = tour
     ? '<span><strong>'+new Date(D.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+'</strong></span>'+
       (homes[0]&&homes[0].time?'<span>Starts <strong>'+clock(homes[0].time)+'</strong></span>':'')+'<span><strong>'+homes.length+'</strong> stops</span>'
-    : '<span><strong>'+count+'</strong> to look through</span>'+(D.area?'<span>'+esc(D.area)+'</span>':'')+(REACT?'<span class="react-sum" hidden></span>':'');
+    : '<span><strong>'+count+'</strong> to look through</span>'+(D.area?'<span>'+esc(D.area)+'</span>':'');
   var routeAll = '';
   if(tour && homes.length>1){
     var last = full(homes[homes.length-1]);
@@ -214,16 +213,11 @@
   if(REACT){
     var state = {};
     var paint = function(){
-      var counts = {love:0, maybe:0, pass:0};
-      Object.keys(state).forEach(function(k){ var r = state[k] && state[k].r; if(r in counts) counts[r]++; });
-      var sum = document.querySelector('.react-sum');
-      var parts = ['love','maybe','pass'].filter(function(k){ return counts[k]; }).map(function(k){ return RX[k].icon+' '+counts[k]; });
-      if(sum){ sum.hidden = !parts.length; sum.innerHTML = (D.client ? esc(D.client)+'\u2019s take: ' : 'Your take: ')+'<strong>'+parts.join(' \u00B7 ')+'</strong>'; }
       document.querySelectorAll('.home[data-home], .tile[data-home]').forEach(function(el){
         var s = state[el.dataset.home] || {};
-        el.classList.remove('rx-love','rx-maybe','rx-pass'); if(s.r) el.classList.add('rx-'+s.r);
+        el.classList.remove('rx-love','rx-pass'); if(RX[s.r]) el.classList.add('rx-'+s.r);
         var b = el.querySelector('.react-badge');
-        if(b){ b.hidden = !s.r; if(s.r) b.innerHTML = '<span aria-hidden="true">'+RX[s.r].icon+'</span><em>'+esc(RX[s.r].badge)+'</em>'; b.title = s.r ? RX[s.r].badge : ''; }
+        if(b){ b.hidden = !RX[s.r]; if(RX[s.r]) b.innerHTML = '<span aria-hidden="true">'+RX[s.r].icon+'</span><em>'+esc(RX[s.r].badge)+'</em>'; b.title = RX[s.r] ? RX[s.r].badge : ''; }
       });
       document.querySelectorAll('.react[data-home]').forEach(function(box){
         var s = state[box.dataset.home] || {};

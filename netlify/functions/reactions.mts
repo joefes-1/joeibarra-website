@@ -1,11 +1,11 @@
-// Client reactions (Love it / Maybe / Not for me + optional note) on /homes pages.
+// Client reactions (Love it / Not for me + optional note) on /homes pages.
 // GET  /api/reactions?page=dolce-ibarra            -> { reactions: { <homeId>: { r, note, at } } }
 // POST /api/reactions { page, home, r, note }      -> saves one home's reaction (r "" + no note = clear)
 // One blob per page+home, so a save never has to read-modify-write anything.
 import { getStore } from "@netlify/blobs"
 import type { Config } from "@netlify/functions"
 
-const REACTIONS = new Set(["love", "maybe", "pass", ""])
+const REACTIONS = new Set(["love", "pass", ""])
 const PAGE_RE = /^[a-z0-9-]{1,80}$/
 const HOME_RE = /^[A-Za-z0-9-]{1,60}$/
 
