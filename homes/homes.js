@@ -20,6 +20,27 @@
   function clock(t){ if(!t) return ''; var p=t.split(':'),h=+p[0],m=p[1]; return (h%12||12)+':'+m+' '+(h<12?'AM':'PM') }
   function when(t){ return new Date(D.date+'T'+t+':00') }
 
+  // Client reactions (showcase pages only, not samples). Saved on the site via /api/reactions,
+  // so Joseph sees exactly what the client tapped when he opens the same link.
+  var REACT = !tour && !D.sample;
+  var PAGE = String(D.page || location.pathname.split('/').pop().replace(/\.html$/,'')).toLowerCase();
+  var WHO = D.client || 'You';
+  function hid(h){ return String(h.mls || h.address).replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60) }
+  var RX = {
+    love:  {icon:'\u2764\uFE0F', label:'Love it',    badge: WHO+' loved it'},
+    maybe: {icon:'\uD83E\uDD14', label:'Maybe',      badge: WHO+(D.client?' is':' are')+' a maybe'},
+    pass:  {icon:'\uD83D\uDC4E', label:'Not for me', badge: 'Not for '+(D.client||'you')}
+  };
+  function reactBlock(h){
+    if(!REACT) return '';
+    return '<div class="react" data-home="'+hid(h)+'"><span class="react-q">What do you think?</span>'+
+      '<div class="react-btns">'+['love','maybe','pass'].map(function(k){
+        return '<button type="button" class="react-btn" data-r="'+k+'" aria-pressed="false"><span aria-hidden="true">'+RX[k].icon+'</span>'+RX[k].label+'</button>';
+      }).join('')+'</div>'+
+      '<form class="react-note" hidden><input type="text" maxlength="300" placeholder="Want to tell me why? (optional)" aria-label="Note for Joseph"><button type="submit" class="btn btn-soft">Send</button></form>'+
+      '<p class="react-said" hidden></p><p class="react-err" hidden>That didn\u2019t save. Check your connection and try again.</p></div>';
+  }
+
   var I = {
     pin:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
     out:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>',
@@ -56,7 +77,7 @@
     if(!tour) acts += '<a class="btn btn-solid" href="'+gmaps(full(h))+'" target="_blank" rel="noopener">'+I.pin+'Google Maps</a><a class="btn btn-ghost" href="'+apple(full(h))+'" target="_blank" rel="noopener">'+I.pin+'Apple Maps</a>';
     if(h.url) acts += '<a class="btn btn-soft" href="'+esc(h.url)+'" target="_blank" rel="noopener">Full listing '+I.out+'</a>';
     acts += '<a class="btn btn-soft" href="'+sms(h)+'">'+I.msg+'Text me about it</a>';
-    return '<article class="home reveal'+(h.added&&!tour?' is-fresh':'')+'" id="stop-'+(i+1)+'">'+
+    return '<article class="home reveal'+(h.added&&!tour?' is-fresh':'')+'"'+(REACT?' data-home="'+hid(h)+'"':'')+' id="stop-'+(i+1)+'">'+
       '<div class="photo">'+(h.photo?(function(){
           var img = '<img src="'+esc(h.photo)+'" alt="'+esc(h.address)+'"'+(i>0?' loading="lazy"':'')+'>';
           // showcase pages: the whole photo opens the listing on Zillow
@@ -66,6 +87,7 @@
         })():'')+
         '<span class="badge"><b>'+(i+1)+'</b>'+(tour?'Stop '+(i+1)+' of '+homes.length:'Home '+(i+1)+' of '+homes.length)+'</span>'+
         (h.status?'<span class="status">'+esc(h.status)+'</span>':'')+
+        (REACT?'<span class="react-badge" hidden></span>':'')+
       '</div>'+
       '<div class="body">'+
         '<div class="headline"><span class="price">'+money(h.price)+'</span>'+
@@ -75,6 +97,7 @@
         (specs.length?'<ul class="specs">'+specs.join('')+'</ul>':'')+
         (h.why?'<div class="why"><span class="eyebrow">'+esc(D.whyLabel||'Why I picked this one')+'</span><p>'+esc(h.why)+'</p></div>':'')+
         (h.headsUp?'<p class="heads-up"><strong>Heads up:</strong> '+esc(h.headsUp)+'</p>':'')+
+        reactBlock(h)+
         '<div class="actions">'+acts+'</div>'+
       '</div></article>';
   }
@@ -85,8 +108,8 @@
     if(h.baths!=null) bits.push(esc(h.baths)+' ba');
     if(h.sqft) bits.push(Number(h.sqft).toLocaleString('en-US')+' sq ft');
     var full = card(h,i).replace('class="home reveal', 'class="home').replace(/ id="stop-\d+"/, '');
-    return '<article class="tile reveal" tabindex="0" aria-label="'+esc(h.address)+', '+money(h.price)+'. Show details">'+
-      '<div class="tile-photo">'+(h.photo?'<img src="'+esc(h.photo)+'" alt="" loading="lazy">':'')+'<span class="tile-num">'+(i+1)+'</span></div>'+
+    return '<article class="tile reveal"'+(REACT?' data-home="'+hid(h)+'"':'')+' tabindex="0" aria-label="'+esc(h.address)+', '+money(h.price)+'. Show details">'+
+      '<div class="tile-photo">'+(h.photo?'<img src="'+esc(h.photo)+'" alt="" loading="lazy">':'')+'<span class="tile-num">'+(i+1)+'</span>'+(REACT?'<span class="react-badge" hidden></span>':'')+'</div>'+
       '<div class="tile-body"><span class="tile-price">'+money(h.price)+'</span><span class="tile-addr">'+esc(h.address)+'</span>'+
         '<span class="tile-specs">'+bits.join(' · ')+'</span><span class="tile-more">See details</span></div>'+
       '<div class="tile-pop"><button class="tile-close" type="button">Close</button>'+full+'</div>'+
@@ -128,7 +151,7 @@
   var meta = tour
     ? '<span><strong>'+new Date(D.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+'</strong></span>'+
       (homes[0]&&homes[0].time?'<span>Starts <strong>'+clock(homes[0].time)+'</strong></span>':'')+'<span><strong>'+homes.length+'</strong> stops</span>'
-    : '<span><strong>'+count+'</strong> to look through</span>'+(D.area?'<span>'+esc(D.area)+'</span>':'');
+    : '<span><strong>'+count+'</strong> to look through</span>'+(D.area?'<span>'+esc(D.area)+'</span>':'')+(REACT?'<span class="react-sum" hidden></span>':'');
   var routeAll = '';
   if(tour && homes.length>1){
     var last = full(homes[homes.length-1]);
@@ -187,6 +210,67 @@
     '<p class="legal">Joseph Ibarra, REALTOR® · DRE #02244753 · First Team Real Estate · Moein Group. Listing information is deemed reliable but not guaranteed and should be independently verified.</p></div></footer>';
 
   root.innerHTML = html;
+
+  if(REACT){
+    var state = {};
+    var paint = function(){
+      var counts = {love:0, maybe:0, pass:0};
+      Object.keys(state).forEach(function(k){ var r = state[k] && state[k].r; if(r in counts) counts[r]++; });
+      var sum = document.querySelector('.react-sum');
+      var parts = ['love','maybe','pass'].filter(function(k){ return counts[k]; }).map(function(k){ return RX[k].icon+' '+counts[k]; });
+      if(sum){ sum.hidden = !parts.length; sum.innerHTML = (D.client ? esc(D.client)+'\u2019s take: ' : 'Your take: ')+'<strong>'+parts.join(' \u00B7 ')+'</strong>'; }
+      document.querySelectorAll('.home[data-home], .tile[data-home]').forEach(function(el){
+        var s = state[el.dataset.home] || {};
+        el.classList.remove('rx-love','rx-maybe','rx-pass'); if(s.r) el.classList.add('rx-'+s.r);
+        var b = el.querySelector('.react-badge');
+        if(b){ b.hidden = !s.r; if(s.r) b.innerHTML = '<span aria-hidden="true">'+RX[s.r].icon+'</span><em>'+esc(RX[s.r].badge)+'</em>'; b.title = s.r ? RX[s.r].badge : ''; }
+      });
+      document.querySelectorAll('.react[data-home]').forEach(function(box){
+        var s = state[box.dataset.home] || {};
+        box.querySelectorAll('.react-btn').forEach(function(btn){ btn.setAttribute('aria-pressed', String(btn.dataset.r === s.r)); });
+        var form = box.querySelector('.react-note'), input = form.querySelector('input');
+        form.hidden = !s.r || (!!s.note && !box.classList.contains('editing'));
+        if(document.activeElement !== input) input.value = s.note || '';
+        var said = box.querySelector('.react-said');
+        said.hidden = !s.note || box.classList.contains('editing');
+        if(s.note) said.innerHTML = '\u201C'+esc(s.note)+'\u201D <span>\u2014 '+esc(WHO)+(s.at?', '+new Date(s.at).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'')+'</span> <button type="button" class="react-edit">Edit</button>';
+      });
+    };
+    var save = function(id, r, note, box){
+      var prev = state[id];
+      state[id] = (r || note) ? {r:r, note:note, at:new Date().toISOString()} : undefined;
+      paint();
+      var errs = document.querySelectorAll('.react[data-home="'+id+'"] .react-err');
+      errs.forEach(function(e){ e.hidden = true; });
+      fetch('/api/reactions', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({page:PAGE, home:id, r:r, note:note})})
+        .then(function(res){ if(!res.ok) throw new Error(res.status); return res.json(); })
+        .then(function(d){ state[id] = d.reaction || undefined; paint(); })
+        .catch(function(){ state[id] = prev; paint(); errs.forEach(function(e){ e.hidden = false; }); });
+    };
+    document.addEventListener('click', function(e){
+      var btn = e.target.closest('.react-btn'); if(!btn) return;
+      var box = btn.closest('.react'), id = box.dataset.home, cur = state[id] || {};
+      var r = cur.r === btn.dataset.r ? '' : btn.dataset.r;      // tap again to undo
+      save(id, r, r ? (cur.note || '') : '', box);
+    });
+    document.addEventListener('click', function(e){
+      var ed = e.target.closest('.react-edit'); if(!ed) return;
+      var box = ed.closest('.react'); box.classList.add('editing'); paint();
+      var input = box.querySelector('.react-note input'); input.focus(); input.select();
+    });
+    document.addEventListener('submit', function(e){
+      var form = e.target.closest('.react-note'); if(!form) return;
+      e.preventDefault();
+      var box = form.closest('.react'), id = box.dataset.home, cur = state[id] || {};
+      box.classList.remove('editing');
+      var input = form.querySelector('input'); input.blur();
+      save(id, cur.r || '', input.value.trim().slice(0,300), box);
+    });
+    fetch('/api/reactions?page='+encodeURIComponent(PAGE), {cache:'no-store'})
+      .then(function(res){ return res.ok ? res.json() : {reactions:{}}; })
+      .then(function(d){ state = d.reactions || {}; paint(); })
+      .catch(function(){});
+  }
 
   // Past-pick tiles: on hover devices, keep the pop-up inside the grid edges;
   // on touch devices, tap to open the full card in place, tap Close (or the tile again) to collapse

@@ -193,3 +193,37 @@ footer .wrap{display:flex;flex-direction:column;align-items:center;gap:14px;text
 .photo .badge,.photo .status{pointer-events:none}
 .photo-hint{position:absolute;right:14px;bottom:14px;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.94);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;box-shadow:0 4px 14px rgba(31,31,31,.14);transition:background .2s,color .2s}
 .photo-link:hover .photo-hint,.photo-link:focus-visible .photo-hint{background:var(--slate);color:#fff}
+
+/* Client reactions */
+.react{border-top:1px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.react-q{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.react-btns{display:flex;flex-wrap:wrap;gap:8px}
+.react-btn{display:inline-flex;align-items:center;gap:6px;font:700 14px var(--sans);color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:0 14px;min-height:40px;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.react-btn:hover{border-color:#B9B2A4}
+.react-btn:active{transform:scale(.96)}
+.react-btn[data-r=love][aria-pressed=true]{background:#FDE8EC;border-color:#E58A9C;color:#8E2440}
+.react-btn[data-r=maybe][aria-pressed=true]{background:#FFF4D6;border-color:#E3B341;color:#6E5100}
+.react-btn[data-r=pass][aria-pressed=true]{background:#EEF0F2;border-color:#AEB6BF;color:#3F4954}
+.react-note{display:flex;gap:8px}
+.react-note input{flex:1;min-width:0;font:inherit;font-size:15px;color:var(--ink);background:#fff;border:1.5px solid #CFC8BA;border-radius:10px;padding:0 12px;min-height:40px}
+.react-note input:focus{outline:none;border-color:var(--slate);box-shadow:0 0 0 3px var(--slate-tint)}
+.react-note .btn{min-height:40px;padding:0 16px;font-size:13.5px}
+.react-said{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--body);line-height:1.4}
+.react-said span{font-family:var(--sans);font-style:normal;font-size:12.5px;font-weight:700;color:var(--muted)}
+.react-err{font-size:13px;font-weight:700;color:#8A3B2B}
+.react-badge{position:absolute;left:14px;bottom:14px;display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--ink);border-radius:999px;padding:5px 12px 5px 9px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(31,31,31,.16);pointer-events:none}
+.react-badge em{font-style:normal}
+.react-badge[hidden]{display:none}
+.tile-photo .react-badge{left:auto;right:8px;top:8px;bottom:auto;padding:3px 6px;font-size:13px}
+.tile-photo .react-badge em{display:none}
+.home.rx-pass .photo img,.tile.rx-pass .tile-photo img{filter:grayscale(.65) brightness(1.02)}
+.tile.rx-pass{opacity:.78}
+.react-sum{color:var(--muted)}
+.react-sum strong{color:var(--ink)}
+.tile-pop .react{padding-top:9px;gap:6px}
+.tile-pop .react-btn{font-size:12.5px;padding:0 10px;min-height:32px;gap:4px}
+.tile-pop .react-note input,.tile-pop .react-note .btn{min-height:34px;font-size:13px}
+.tile-pop .react-said{font-size:15px}
+.tile-pop .react-badge{font-size:12px;left:10px;bottom:10px}
+@media print{.react-btns,.react-note{display:none!important}}
+.react-edit{background:none;border:0;padding:0 0 0 4px;font:700 12.5px var(--sans);color:var(--slate);text-decoration:underline;cursor:pointer}
