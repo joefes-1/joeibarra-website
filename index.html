@@ -160,7 +160,43 @@ footer .wrap{display:flex;flex-direction:column;gap:18px;align-items:center;text
 .logos img{height:48px;width:auto}
 .logos i{width:1px;height:44px;background:var(--line)}
 .legal{font-size:12px;color:var(--muted);line-height:1.6;max-width:62em}
+
+/* Motion: hero intro on load, gentle fade-up as sections scroll in, hover life.
+   Only hides things when JS is running, and everything is off for reduced-motion users. */
+@media (prefers-reduced-motion:no-preference){
+  .js .hero-copy>*{opacity:0;transform:translateY(18px);animation:rise .8s cubic-bezier(.2,.7,.2,1) forwards}
+  .js .hero-copy>*:nth-child(1){animation-delay:.05s}
+  .js .hero-copy>*:nth-child(2){animation-delay:.18s}
+  .js .hero-copy>*:nth-child(3){animation-delay:.32s}
+  .js .hero-copy>*:nth-child(4){animation-delay:.46s}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  .js .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0s)}
+  .js .reveal.in{opacity:1;transform:none}
+
+  /* The slate line on "How I help" draws in from the left */
+  .help-item{border-top-color:transparent;position:relative}
+  .help-item::before{content:"";position:absolute;left:0;top:-2px;height:2px;width:100%;background:var(--slate);transform:scaleX(0);transform-origin:left;transition:transform .9s cubic-bezier(.2,.7,.2,1) calc(var(--d,0s) + .2s)}
+  .help-item.in::before{transform:scaleX(1)}
+  html:not(.js) .help-item::before{transform:scaleX(1)}
+
+  /* Sold homes: photo eases in a touch on hover */
+  .sold img{transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+  a.sold:hover img{transform:scale(1.05)}
+  .sold .view svg{transition:transform .2s}
+  a.sold:hover .view svg{transform:translate(2px,-2px)}
+
+  /* Buttons lift slightly */
+  .btn{transition:background .15s,color .15s,transform .2s,box-shadow .2s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(44,59,74,.18)}
+  .btn:active{transform:none;box-shadow:none}
+
+  /* Headshot in contact section floats in */
+  .contact img.head{transition:transform .4s cubic-bezier(.2,.7,.2,1)}
+  .contact img.head:hover{transform:rotate(-1.5deg) scale(1.02)}
+}
 </style>
+<script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
 <header class="top">
@@ -351,6 +387,55 @@ footer .wrap{display:flex;flex-direction:column;gap:18px;align-items:center;text
 </footer>
 
 <script>
+// Scroll reveals + count-up stats
+(function(){
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // [selector, stagger in seconds]
+  var groups=[
+    ['.value-copy>*',.08],['.form-card',0],
+    ['.section-head',0],['.stat',.1],['.sold',.08],['.team-note',0],
+    ['.help-item',.12],['.areas',0],
+    ['.contact img.head',0],['.contact-copy',.1]
+  ];
+  var els=[];
+  groups.forEach(function(g){
+    document.querySelectorAll(g[0]).forEach(function(el,i){
+      el.classList.add('reveal');
+      if(g[1]) el.style.setProperty('--d',(i*g[1]).toFixed(2)+'s');
+      els.push(el);
+    });
+  });
+  function countUp(el){
+    var m=el.textContent.match(/^(\D*)(\d+)(.*)$/);
+    if(!m||reduce) return;
+    var pre=m[1],end=+m[2],post=m[3],t0=null,dur=1400;
+    function step(t){
+      if(!t0) t0=t;
+      var p=Math.min((t-t0)/dur,1),e=1-Math.pow(1-p,3);
+      el.textContent=pre+Math.round(end*e)+post;
+      if(p<1) requestAnimationFrame(step);
+    }
+    el.textContent=pre+'0'+post;
+    requestAnimationFrame(step);
+  }
+  if(!('IntersectionObserver' in window)){els.forEach(function(el){el.classList.add('in')});return;}
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(!en.isIntersecting) return;
+      var t=en.target;
+      t.classList.add('in');
+      // once it's settled, drop the reveal class so normal hover effects take over again
+      setTimeout(function(){t.classList.remove('reveal')},900+parseFloat(t.style.getPropertyValue('--d')||0)*1000);
+      if(en.target.classList.contains('stat')){
+        var s=en.target.querySelector('strong');
+        setTimeout(function(){countUp(s)},parseFloat(en.target.style.getPropertyValue('--d')||0)*1000);
+      }
+      io.unobserve(en.target);
+    });
+  },{threshold:.15,rootMargin:'0px 0px -40px 0px'});
+  els.forEach(function(el){io.observe(el)});
+})();
+
 // Paste the Google Apps Script web app URL here once it's set up
 var GOOGLE_SHEET_URL='https://script.google.com/macros/s/AKfycbyFU6fiptfSZJEEGUeyF4C9amfGEDOd0nw8LeQuKrre3e14Rq-aVmHzUhtQLRDMUX7R/exec';
 (function(){
