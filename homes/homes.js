@@ -190,13 +190,28 @@
 
   // Past-pick tiles: on hover devices, keep the pop-up inside the grid edges;
   // on touch devices, tap to open the full card in place, tap Close (or the tile again) to collapse
+  // keep a past-pick pop-up fully on screen: pick a side, shift it up if it would run past the bottom
+  function placePop(t){
+    var g = t.parentNode.getBoundingClientRect(), r = t.getBoundingClientRect();
+    t.dataset.align = (r.left - g.left < 10) ? 'left' : (g.right - r.right < 10 ? 'right' : 'center');
+    var pop = t.querySelector('.tile-pop'), h = Math.min(pop.scrollHeight, innerHeight - 24), top = -10;
+    if(r.top + top + h > innerHeight - 12) top = innerHeight - 12 - h - r.top;
+    if(r.top + top < 12) top = 12 - r.top;
+    t.style.setProperty('--pop-top', Math.round(top) + 'px');
+  }
+  // re-place while scrolling/resizing so it never drifts off screen
+  var placing = false;
+  function replaceHovered(){
+    if(placing) return; placing = true;
+    requestAnimationFrame(function(){ placing = false; var t = document.querySelector('.tile:hover, .tile:focus-within'); if(t) placePop(t); });
+  }
+  addEventListener('scroll', replaceHovered, {passive:true});
+  addEventListener('resize', replaceHovered);
   var hoverable = matchMedia('(hover: hover) and (pointer: fine)').matches;
   document.querySelectorAll('.tile').forEach(function(t){
     if(hoverable){
-      t.addEventListener('mouseenter', function(){
-        var g = t.parentNode.getBoundingClientRect(), r = t.getBoundingClientRect();
-        t.dataset.align = (r.left - g.left < 10) ? 'left' : (g.right - r.right < 10 ? 'right' : 'center');
-      });
+      t.addEventListener('mouseenter', function(){ placePop(t); });
+      t.addEventListener('focusin', function(){ placePop(t); });
     } else {
       t.addEventListener('click', function(e){
         if(e.target.closest('a')) return;               // let links in the full card work

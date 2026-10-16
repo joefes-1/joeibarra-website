@@ -103,7 +103,7 @@ p{margin:0}
 /* Computer: hover or keyboard focus pops the full card up over the grid */
 @media (hover:hover) and (pointer:fine){
   .tile-more::after{content:" ›"}
-  .tile-pop{display:block;position:absolute;top:-14px;left:50%;width:min(460px,92vw);z-index:40;opacity:0;visibility:hidden;
+  .tile-pop{display:block;position:absolute;top:var(--pop-top,-10px);left:50%;width:min(360px,92vw);max-height:calc(100vh - 24px);overflow:auto;border-radius:20px;z-index:40;opacity:0;visibility:hidden;
     transform:translateX(-50%) scale(.94);transform-origin:top center;transition:opacity .2s ease,transform .25s cubic-bezier(.2,.7,.2,1),visibility 0s .25s}
   .tile[data-align=left] .tile-pop{left:-6px;transform:scale(.94);transform-origin:top left}
   .tile[data-align=right] .tile-pop{left:auto;right:-6px;transform:scale(.94);transform-origin:top right}
@@ -112,6 +112,24 @@ p{margin:0}
   .tile[data-align=left]:hover .tile-pop,.tile[data-align=left]:focus-within .tile-pop,
   .tile[data-align=right]:hover .tile-pop,.tile[data-align=right]:focus-within .tile-pop{transform:scale(1)}
   .tile-pop .home{box-shadow:0 24px 60px rgba(31,31,31,.22),0 4px 14px rgba(31,31,31,.10)}
+  /* compact version of the full card for the pop-up */
+  .tile-pop .photo img{aspect-ratio:2/1}
+  .tile-pop .badge{left:10px;top:10px;font-size:12px;padding:4px 10px 4px 4px}
+  .tile-pop .badge b{width:22px;height:22px;font-size:12px}
+  .tile-pop .status{right:10px;top:10px;font-size:10px;padding:4px 10px}
+  .tile-pop .photo-hint{right:10px;bottom:10px;font-size:11.5px;padding:5px 10px}
+  .tile-pop .body{padding:14px 16px 16px;gap:9px}
+  .tile-pop .price{font-size:26px}
+  .tile-pop .addr{font-size:14.5px}
+  .tile-pop .addr span{font-size:13.5px}
+  .tile-pop .specs{gap:6px}
+  .tile-pop .specs li{font-size:12.5px;padding:4px 9px;border-radius:8px}
+  .tile-pop .why{padding-left:11px}
+  .tile-pop .why p{font-size:14px;line-height:1.45}
+  .tile-pop .heads-up{font-size:12.5px;padding:8px 10px}
+  .tile-pop .actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .tile-pop .actions .btn{min-height:34px;padding:0 10px;font-size:12.5px;gap:6px}
+  .tile-pop .actions .btn svg{width:13px;height:13px}
 }
 /* Phone/tablet: tap opens the full card in place across the grid */
 @media not ((hover:hover) and (pointer:fine)){
