@@ -11,7 +11,7 @@
      sample:     true,                  // sample pages: banner, no expiry, no reactions
      title, note, area, whyLabel,
      listings: [{ address, city, mls, price, status, beds, baths, sqft, lot, year, hoa,
-                  photo, url, why, headsUp,
+                  photo, url (RealScout listing link; Zillow as a fallback), why, headsUp,
                   added: "2026-10-18T14:20",   // showcase: added after the link went out -> Fresh pick
                   time: "10:35", drive: "..."  // tour: arrival time + drive note
                 }]
@@ -133,9 +133,10 @@
     opts = opts || {};
     var url = safeUrl(h.url), photo = safeUrl(h.photo), fresh = !TOUR && !!h.added;
     var img = photo ? '<img src="' + esc(photo) + '" alt="' + esc(h.address) + '"' + (i > 0 ? ' loading="lazy"' : '') + '>' : '';
-    if(img && !TOUR && url){   // showcase: the whole photo opens the listing on Zillow
-      img = '<a class="photo-link" href="' + esc(url) + '" target="_blank" rel="noopener" aria-label="View ' + esc(h.address) + ' on Zillow">' + img +
-            '<span class="photo-hint">View on Zillow ' + ICON.out + '</span></a>';
+    if(img && !TOUR && url){   // showcase: the whole photo opens the full listing (Joseph's RealScout, or Zillow)
+      var hint = /zillow\.com/i.test(url) ? 'View on Zillow' : 'See full listing';
+      img = '<a class="photo-link" href="' + esc(url) + '" target="_blank" rel="noopener" aria-label="' + hint + ': ' + esc(h.address) + '">' + img +
+            '<span class="photo-hint">' + hint + ' ' + ICON.out + '</span></a>';
     }
     var acts = (TOUR ? '' : mapButtons(fullAddress(h))) +
       (url ? '<a class="btn btn-soft" href="' + esc(url) + '" target="_blank" rel="noopener">Full listing ' + ICON.out + '</a>' : '') +
