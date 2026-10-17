@@ -255,12 +255,21 @@
       '</div></section>';
   }
 
-  function renderExpired(){
-    document.title = (TOUR ? 'Tour wrapped up' : 'Page expired') + ' · ' + AGENT.name;
+  // Shown instead of the page once it has expired, or after Joseph removes it from /admin.
+  function renderClosed(removed){
+    var copy = removed
+      ? {title:'Page no longer available', eyebrow:'This page is no longer available', h1:'Thanks for looking!',
+         lede:'Text me if you\'d like an updated list of homes, or to set up a time to see some in person.'}
+      : TOUR
+      ? {title:'Tour wrapped up', eyebrow:'This tour has wrapped up', h1:'Thanks for coming out!',
+         lede:'Text me what you thought of the homes, or if you want to set up another tour.'}
+      : {title:'Page expired', eyebrow:'This page has expired', h1:'These homes may have sold or changed price.',
+         lede:'Text me and I\'ll send over an updated list with what\'s available right now.'};
+    document.title = copy.title + ' · ' + AGENT.name;
     root.innerHTML = header(false) +
-      '<main><section class="intro"><div class="wrap"><div class="eyebrow">' + (TOUR ? 'This tour has wrapped up' : 'This page has expired') + '</div>' +
-      '<h1>' + (TOUR ? 'Thanks for coming out!' : 'These homes may have sold or changed price.') + '</h1>' +
-      '<p class="lede">' + (TOUR ? 'Text me what you thought of the homes, or if you want to set up another tour.' : 'Text me and I\'ll send over an updated list with what\'s available right now.') + '</p>' +
+      '<main><section class="intro"><div class="wrap"><div class="eyebrow">' + copy.eyebrow + '</div>' +
+      '<h1>' + copy.h1 + '</h1>' +
+      '<p class="lede">' + copy.lede + '</p>' +
       '<div class="actions">' + textButton() + '<a class="btn btn-ghost" href="/">Visit my site</a></div>' +
       '</div></section></main>';
   }
@@ -282,8 +291,8 @@
   }
 
   /* ---------- Reactions: saved on the site via /api/reactions, so Joseph sees what the client tapped ---------- */
-  function initReactions(){
-    var state = {}, seq = {};
+  function initReactions(saved){
+    var state = saved || {}, seq = {};
     function paint(){
       document.querySelectorAll('.home[data-home], .tile[data-home]').forEach(function(el){
         var s = state[el.dataset.home] || {}, rx = REACTION[s.r];
@@ -338,10 +347,26 @@
       box.classList.remove('editing'); input.blur();
       save(id, (state[id] || {}).r || '', input.value.trim().slice(0, 300));
     });
+    paint();
+  }
+
+  /* ---------- Page status from the site: saved reactions + whether Joseph removed the page ---------- */
+  // A removal only counts if it happened after the page's latest update, so re-sending the
+  // page (new `created`) or adding a fresh pick brings it back.
+  function latestUpdate(){
+    var s = [D.created || '', D.date || ''];
+    homes.forEach(function(h){ if(h.added) s.push(h.added); });
+    return s.sort().pop();
+  }
+  function loadStatus(){
+    if(D.sample) return;
     fetch('/api/reactions?page=' + enc(PAGE), {cache:'no-store'})
-      .then(function(res){ return res.ok ? res.json() : {reactions:{}}; })
-      .then(function(d){ state = d.reactions || {}; paint(); })
-      .catch(function(){});
+      .then(function(res){ return res.ok ? res.json() : {}; })
+      .catch(function(){ return {}; })
+      .then(function(d){
+        if(d.removedAt && d.removedAt.slice(0, 16) >= latestUpdate()){ renderClosed(true); return; }
+        if(REACT) initReactions(d.reactions);
+      });
   }
 
   /* ---------- Past-pick tiles ---------- */
@@ -421,9 +446,9 @@
   /* ---------- Go ---------- */
   validate();
   var exp = expiresAt();
-  if(exp && new Date() >= exp){ renderExpired(); return; }
+  if(exp && new Date() >= exp){ renderClosed(false); return; }
   renderPage();
-  if(REACT) initReactions();
+  loadStatus();
   initTiles();
   initLiveTour();
   initReveal();

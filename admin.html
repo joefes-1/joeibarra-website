@@ -63,6 +63,9 @@
 .expired summary{cursor:pointer;font-weight:700;color:var(--slate);font-size:15px}
 .expired .pages{margin-top:12px}
 .expired .pg{opacity:.75}
+.pg .remove{align-self:flex-start;background:none;border:0;padding:4px 0 0;font:700 13px var(--sans);color:#8A3B2B;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.pg .remove:disabled{opacity:.6;cursor:default}
+.removed .pg{opacity:.85}
 .empty-box{background:var(--cream);border-radius:14px;padding:16px;color:var(--muted);font-size:15px}
 </style>
 </head>
@@ -79,6 +82,7 @@
   'use strict';
   var KEY = 'joeibarra-admin-key', SEEN = 'joeibarra-admin-seen';
   var view = document.getElementById('view'), signout = document.getElementById('signout');
+  var current = null;   // password for this visit (also saved in the browser when allowed)
   var REACTION = {love:{icon:'❤️', text:function(c){ return c + ' loved it'; }},
                   pass:{icon:'👎', text:function(c){ return 'Not for ' + c; }}};
 
@@ -119,6 +123,7 @@
   /* ---------- Data ---------- */
   function load(pw, fromLogin){
     if(!pw){ showLogin(); return; }
+    current = pw;
     fetch('/api/admin', {headers:{Authorization:'Bearer ' + pw}, cache:'no-store'})
       .then(function(res){
         if(res.status === 401){ set(KEY, null); showLogin(fromLogin ? 'That password didn’t work.' : ''); return null; }
@@ -134,8 +139,13 @@
   /* ---------- Dashboard ---------- */
   function render(data){
     signout.hidden = false;
-    var pages = data.pages || [], reactions = data.reactions || {}, now = today();
-    var byPage = {}; pages.forEach(function(p){ byPage[p.page] = p; });
+    var pages = data.pages || [], reactions = data.reactions || {}, removedAt = data.removed || {}, now = today();
+    // Same rule as the client page: a removal counts unless the page was updated after it.
+    function isRemoved(p){
+      var r = removedAt[p.page]; if(!r || !r.at) return false;
+      return r.at.slice(0, 16) >= [p.created || '', p.date || '', p.lastAdded || ''].sort().pop();
+    }
+    var byPage = {}; pages.forEach(function(p){ if(!isRemoved(p)) byPage[p.page] = p; });
     var lastSeen = get(SEEN) || '';
 
     // Flatten reactions into one feed (skips test pages that aren't real client pages)
@@ -154,8 +164,8 @@
     feed.forEach(function(f){ var c = counts[f.page.page] = counts[f.page.page] || {love:0, pass:0, note:0, last:''};
       if(f.r === 'love') c.love++; if(f.r === 'pass') c.pass++; if(f.note) c.note++; if(f.at > c.last) c.last = f.at; });
 
-    var active = [], expired = [];
-    pages.forEach(function(p){ (p.expires && now >= p.expires ? expired : active).push(p); });
+    var active = [], expired = [], removed = [];
+    pages.forEach(function(p){ (isRemoved(p) ? removed : p.expires && now >= p.expires ? expired : active).push(p); });
     function activity(p){ var c = counts[p.page] || {}; return [c.last || '', p.lastAdded || '', p.created || '', p.date || ''].sort().pop(); }
     active.sort(function(a, b){ return activity(a) < activity(b) ? 1 : -1; });
     expired.sort(function(a, b){ return (a.expires || '') < (b.expires || '') ? 1 : -1; });
@@ -177,10 +187,12 @@
       '</section>' +
 
       (expired.length ? '<details class="expired"><summary>Expired pages (' + expired.length + ')</summary><div class="pages">' +
-        expired.map(function(p){ return pageCard(p, counts[p.page]); }).join('') + '</div></details>' : '');
+        expired.map(function(p){ return pageCard(p, counts[p.page]); }).join('') + '</div></details>' : '') +
+      (removed.length ? '<details class="expired removed"><summary>Removed pages (' + removed.length + ')</summary><div class="pages">' +
+        removed.map(function(p){ return pageCard(p, null, removedAt[p.page].at); }).join('') + '</div></details>' : '');
 
     set(SEEN, new Date().toISOString());   // everything on screen now counts as seen next time
-    document.getElementById('refresh').addEventListener('click', function(){ load(get(KEY)); });
+    document.getElementById('refresh').addEventListener('click', function(){ load(current); });
   }
 
   function feedItem(f, lastSeen){
@@ -198,7 +210,7 @@
       '</div></li>';
   }
 
-  function pageCard(p, c){
+  function pageCard(p, c, removedOn){
     c = c || {love:0, pass:0, note:0};
     var tour = p.mode === 'tour', n = (p.listings || []).length;
     var line = tour
@@ -214,12 +226,20 @@
       exp = '<span class="pg-exp' + (left > 0 && left <= 3 ? ' soon' : '') + '">' + esc(exp) + '</span>';
     }
     var link = 'joeibarra.com' + p.path;
+    var who = esc(p.client || p.page) + '\u2019s ' + (tour ? 'tour' : 'homes') + ' page';
+    if(removedOn){
+      return '<article class="pg"><div class="pg-top"><span class="pg-name">' + esc(p.client || p.page) + '</span>' +
+        '<span class="pill' + (tour ? ' tour' : '') + '">' + (tour ? 'Tour' : 'Homes') + '</span></div>' +
+        '<span class="pg-line">' + esc(line) + '</span><span class="pg-exp">Removed ' + esc(new Date(removedOn).toLocaleDateString('en-US', {month:'short', day:'numeric'})) + '</span>' +
+        '<div class="actions"><button class="btn btn-soft page-action" type="button" data-action="restore" data-page="' + esc(p.page) + '" data-who="' + who + '">Restore</button></div></article>';
+    }
     return '<article class="pg"><div class="pg-top"><span class="pg-name">' + esc(p.client || p.page) + '</span>' +
       '<span class="pill' + (tour ? ' tour' : '') + '">' + (tour ? 'Tour' : 'Homes') + '</span></div>' +
       '<span class="pg-line">' + esc(line) + '</span>' + exp +
       (tour ? '' : '<div class="pg-counts"><span>❤️ ' + c.love + '</span><span>👎 ' + c.pass + '</span><span>📝 ' + c.note + '</span></div>') +
       '<div class="actions"><a class="btn btn-solid" href="' + esc(p.path) + '" target="_blank" rel="noopener">Open page</a>' +
-        '<button class="btn btn-soft copy" type="button" data-link="' + esc(link) + '">Copy link</button></div></article>';
+        '<button class="btn btn-soft copy" type="button" data-link="' + esc(link) + '">Copy link</button></div>' +
+      '<button class="remove page-action" type="button" data-action="remove" data-page="' + esc(p.page) + '" data-who="' + who + '">Remove page</button></article>';
   }
 
   // Copy a client's link (no ".html") to paste into a text
@@ -229,7 +249,19 @@
     if(navigator.clipboard) navigator.clipboard.writeText(b.dataset.link).then(done, function(){ prompt('Copy this link:', b.dataset.link); });
     else prompt('Copy this link:', b.dataset.link);
   });
-  signout.addEventListener('click', function(){ set(KEY, null); showLogin(); });
+  // Remove (takes the client's link offline) / Restore
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('.page-action'); if(!b) return;
+    var remove = b.dataset.action === 'remove';
+    if(remove && !confirm('Remove ' + b.dataset.who + '?\n\nThe link will stop working for them right away. You can restore it later from "Removed pages".')) return;
+    b.disabled = true; b.textContent = remove ? 'Removing\u2026' : 'Restoring\u2026';
+    fetch('/api/admin', {method:'POST', cache:'no-store',
+      headers:{'Content-Type':'application/json', Authorization:'Bearer ' + current},
+      body: JSON.stringify({action:b.dataset.action, page:b.dataset.page})})
+      .then(function(res){ if(!res.ok) throw new Error(res.status); load(current); })
+      .catch(function(){ b.disabled = false; b.textContent = remove ? 'Remove page' : 'Restore'; alert('That didn\u2019t go through. Try again.'); });
+  });
+  signout.addEventListener('click', function(){ set(KEY, null); current = null; showLogin(); });
 
   load(get(KEY));
 })();

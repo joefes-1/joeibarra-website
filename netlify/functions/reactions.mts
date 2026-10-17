@@ -1,5 +1,6 @@
 // Client reactions (Love it / Not for me + optional note) on /homes pages.
-// GET  /api/reactions?page=dolce-ibarra            -> { reactions: { <homeId>: { r, note, at } } }
+// GET  /api/reactions?page=dolce-ibarra            -> { reactions: { <homeId>: { r, note, at } }, removedAt }
+//      removedAt: when Joseph removed the page from /admin (null if not removed)
 // POST /api/reactions { page, home, r, note }      -> saves one home's reaction (r "" + no note = clear)
 // One blob per page+home, so a save never has to read-modify-write anything.
 import { getStore } from "@netlify/blobs"
@@ -26,7 +27,8 @@ export default async (req: Request) => {
         if (value) reactions[b.key.slice(page.length + 1)] = value
       })
     )
-    return json({ reactions })
+    const removed = (await getStore({ name: "client-admin", consistency: "strong" }).get(`removed/${page}`, { type: "json" })) as { at?: string } | null
+    return json({ reactions, removedAt: removed?.at || null })
   }
 
   if (req.method === "POST") {

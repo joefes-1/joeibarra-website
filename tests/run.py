@@ -38,8 +38,8 @@ def serve():
 
 class FakeApi:
     """In-memory stand-in for /api/reactions, same contract as netlify/functions/reactions.mts."""
-    def __init__(self, fail=False):
-        self.db, self.fail = {}, fail
+    def __init__(self, fail=False, removed_at=None):
+        self.db, self.fail, self.removed_at = {}, fail, removed_at
 
     async def handle(self, route):
         req = route.request
@@ -48,7 +48,7 @@ class FakeApi:
         if req.method == 'GET':
             page = re.search(r'page=([^&]*)', req.url).group(1)
             out = {k.split('/', 1)[1]: v for k, v in self.db.items() if k.startswith(page + '/')}
-            return await route.fulfill(status=200, content_type='application/json', body=json.dumps({'reactions': out}))
+            return await route.fulfill(status=200, content_type='application/json', body=json.dumps({'reactions': out, 'removedAt': self.removed_at}))
         b = json.loads(req.post_data)
         key = b['page'] + '/' + b['home']
         if not b['r'] and not b.get('note'):
@@ -213,6 +213,22 @@ async def tiles(browser, base):
     await p.context.close()
 
 
+async def removal(browser, base):
+    print('Removed pages: client sees "no longer available"; re-sending or adding a home brings the page back')
+    day_after = dt.datetime(2026, 10, 21, 10, 0)
+    cases = [('/tests/fixtures/fresh.html', '2026-10-21T15:00:00Z', True, day_after),    # removed after the last fresh pick (Oct 20)
+             ('/tests/fixtures/fresh.html', '2026-10-19T15:00:00Z', False, day_after),   # a fresh pick was added after the removal
+             ('/tests/fixtures/tour.html', '2026-10-17T15:00:00Z', True, dt.datetime(2026, 10, 17, 9, 0)),   # on tour day
+             ('/tests/fixtures/fresh.html', None, False, day_after)]
+    for path, removed_at, gone, when in cases:
+        p = await open_page(browser, base, path, when, api=FakeApi(removed_at=removed_at))
+        await p.wait_for_timeout(200)
+        t = await text(p)
+        check(('this page is no longer available' in t) == gone, f'{path} removed {removed_at}: "no longer available" should be {gone}')
+        check(not p.errors, f'{path} removed {removed_at}: script errors {p.errors}')
+        await p.context.close()
+
+
 async def directory(browser, base):
     print('Admin directory: up to date with homes/*.html, expiry dates match the pages')
     r = subprocess.run(['node', os.path.join(ROOT, 'scripts', 'build-directory.mjs'), '--check'], capture_output=True, text=True)
@@ -298,6 +314,29 @@ async def admin(browser, base):
     link = await pg.locator('.copy').first.get_attribute('data-link')
     check(link and not link.endswith('.html'), f'copied links should not end in .html, got {link}')
     await pg.context.close()
+    # Remove / Restore
+    data = json.loads(json.dumps(ADMIN_DATA))
+    data['pages'].append({'page': 'test-gone', 'path': '/tests/fixtures/empty', 'mode': 'showcase', 'client': 'Gina', 'created': '2026-10-16',
+                          'date': None, 'lastAdded': None, 'expires': '2026-11-15', 'listings': []})
+    data['removed'] = {'test-gone': {'at': '2026-10-20T12:00:00Z'}}
+    pg = await page_with(200, data, stored='test-password')
+    active = await pg.evaluate("[...document.querySelectorAll('.panel .pg .pg-name')].map(e=>e.textContent)")
+    check('Gina' not in active, f'removed pages should leave the active list, got {active}')
+    check(await pg.locator('details.removed .page-action[data-action=restore]').count() == 1, 'removed page should be under Removed pages with a Restore button')
+    posts = []
+    async def record(route):
+        if route.request.method == 'POST':
+            posts.append((route.request.headers.get('authorization'), json.loads(route.request.post_data)))
+            return await route.fulfill(status=200, content_type='application/json', body='{"ok":true}')
+        await route.fulfill(status=200, content_type='application/json', body=json.dumps(data))
+    await pg.route('**/api/admin', record)
+    pg.on('dialog', lambda d: asyncio.ensure_future(d.accept()))
+    await pg.locator('.panel .page-action[data-action=remove]').first.click(); await pg.wait_for_timeout(300)
+    check(posts and posts[0] == ('Bearer test-password', {'action': 'remove', 'page': 'test-fresh'}), f'Remove should POST the page with the password, got {posts}')
+    await pg.locator('details.removed summary').click()
+    await pg.locator('details.removed .page-action[data-action=restore]').click(); await pg.wait_for_timeout(300)
+    check(len(posts) == 2 and posts[1][1] == {'action': 'restore', 'page': 'test-gone'}, f'Restore should POST restore, got {posts}')
+    await pg.context.close()
     # setup message when the password hasn't been added in Netlify yet
     pg = await page_with(503, {'error': 'setup'}, stored='x')
     check('ADMIN_PASSWORD' in await pg.inner_text('body'), 'admin should explain when the password is not set up yet')
@@ -308,7 +347,7 @@ async def main():
     base = serve()
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
-        for suite in (real_pages, fresh_picks, tours, edge_cases, reactions, tiles, directory, admin):
+        for suite in (real_pages, fresh_picks, tours, edge_cases, reactions, tiles, removal, directory, admin):
             await suite(browser, base)
         await browser.close()
     print('\n%d checks passed, %d failed' % (PASSES, len(FAILS)))

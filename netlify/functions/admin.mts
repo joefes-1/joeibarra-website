@@ -1,5 +1,7 @@
 // Private data for Joseph's /admin page: every client page + every client reaction.
-// GET /api/admin with header "Authorization: Bearer <password>".
+// GET  /api/admin                          -> { pages, reactions, removed }
+// POST /api/admin { action, page }         -> action "remove" takes a client page offline, "restore" brings it back
+// Both need header "Authorization: Bearer <password>".
 // The password lives only in the Netlify environment variable ADMIN_PASSWORD (Functions scope).
 import { getStore } from "@netlify/blobs"
 import type { Config } from "@netlify/functions"
@@ -23,6 +25,24 @@ export default async (req: Request) => {
   const given = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "")
   if (!given || !passwordMatches(given, expected)) return json({ error: "locked" }, 401)
 
+  const admin = getStore({ name: "client-admin", consistency: "strong" })
+
+  if (req.method === "POST") {
+    let body: any
+    try { body = await req.json() } catch { return json({ error: "Bad JSON" }, 400) }
+    const page = String(body?.page || ""), action = String(body?.action || "")
+    if (!directory.pages.some((p) => p.page === page)) return json({ error: "Unknown page" }, 400)
+    if (action === "remove") await admin.setJSON(`removed/${page}`, { at: new Date().toISOString() })
+    else if (action === "restore") await admin.delete(`removed/${page}`)
+    else return json({ error: "Unknown action" }, 400)
+    return json({ ok: true })
+  }
+
+  // Pages Joseph removed: { "dolce-ibarra": { at } }
+  const removed: Record<string, unknown> = {}
+  const { blobs: removedKeys } = await admin.list({ prefix: "removed/" })
+  await Promise.all(removedKeys.map(async ({ key }) => { removed[key.slice(8)] = await admin.get(key, { type: "json" }) }))
+
   // All saved reactions, grouped by page: { "dolce-ibarra": { "<homeId>": { r, note, at } } }
   const store = getStore({ name: "client-reactions", consistency: "strong" })
   const { blobs } = await store.list()
@@ -34,12 +54,12 @@ export default async (req: Request) => {
       if (value && page && home) (reactions[page] ||= {})[home] = value
     })
   )
-  return json({ pages: directory.pages, reactions })
+  return json({ pages: directory.pages, reactions, removed })
 }
 
 // A handful of tries per minute per visitor is plenty for Joseph and slows down password guessing.
 export const config: Config = {
   path: "/api/admin",
-  method: "GET",
+  method: ["GET", "POST"],
   rateLimit: { windowLimit: 20, windowSize: 60, aggregateBy: ["ip", "domain"] },
 }
