@@ -10,9 +10,13 @@
      date:       "2026-10-17",          // tour only: the tour day (page shuts off 2 days after)
      sample:     true,                  // sample pages: banner, no expiry, no reactions
      title, note, area, whyLabel,
+     checked:    "2026-10-18",          // showcase: day the daily refresh last checked prices/open houses
      listings: [{ address, city, mls, price, status, beds, baths, sqft, lot, year, hoa,
                   photo, url (RealScout listing link; Zillow as a fallback), why, headsUp,
                   added: "2026-10-18T14:20",   // showcase: added after the link went out -> Fresh pick
+                  openHouses: [{ date: "2026-10-18", start: "13:00", end: "16:00" }],  // past ones hide themselves
+                  was: 1290000, priceChanged: "2026-10-12",   // previous price -> "Price drop" / "Price up" tag
+                  status: "Pending" | "Sold" | ...             // pending/sold/off market get flagged on the card and tile
                   time: "10:35", drive: "..."  // tour: arrival time + drive note
                 }]
    }
@@ -81,6 +85,7 @@
     homes.forEach(function(h, i){
       ['address', 'city', 'price'].forEach(function(k){ if(h[k] == null || h[k] === '') warn('listing ' + (i + 1) + ' is missing ' + k); });
       if(h.url && !safeUrl(h.url)) warn('listing ' + (i + 1) + ' has an unsafe url');
+      (h.openHouses || []).forEach(function(o){ if(!o || !/^\d{4}-\d\d-\d\d$/.test(o.date || '')) warn('listing ' + (i + 1) + ' has an open house without a YYYY-MM-DD date'); });
     });
   }
 
@@ -129,6 +134,41 @@
     return s.length ? '<ul class="specs">' + s.join('') + '</ul>' : '';
   }
 
+  // Listing status buckets: "Pending"/"In escrow" -> pending, "Sold" -> sold, "Withdrawn"/"Off market" -> off
+  function statusKind(h){
+    var s = String(h.status || '');
+    if(/sold|closed/i.test(s)) return 'sold';
+    if(/pending|escrow|contingent|under contract/i.test(s)) return 'pending';
+    if(/off.?market|withdrawn|expired|cancel/i.test(s)) return 'off';
+    return '';
+  }
+  function hm(t){ var p = t.split(':'), h = +p[0], m = p[1]; return (h % 12 || 12) + (m !== '00' ? ':' + m : ''); }
+  function timeRange(o){
+    if(!o.start) return '';
+    var ap = function(t){ return +t.split(':')[0] < 12 ? 'AM' : 'PM'; };
+    if(!o.end) return hm(o.start) + ' ' + ap(o.start);
+    return hm(o.start) + (ap(o.start) === ap(o.end) ? '' : ' ' + ap(o.start)) + ' to ' + hm(o.end) + ' ' + ap(o.end);
+  }
+  // Upcoming open houses only: one that has ended drops off by itself.
+  function upcomingOpenHouses(h){
+    var now = new Date();
+    return (h.openHouses || []).filter(function(o){ return o && o.date && localDate(o.date, o.end || '23:59') > now; });
+  }
+  function openHouseLine(h){
+    if(TOUR) return '';
+    var list = upcomingOpenHouses(h);
+    if(!list.length) return '';
+    return '<p class="open-house"><strong>Open house</strong> ' + list.map(function(o){
+      return '<span class="oh">' + esc(dayLabel(o.date) + (o.start ? ', ' + timeRange(o) : '')) + '</span>';
+    }).join(' · ') + '</p>';
+  }
+  function priceChange(h){
+    if(typeof h.was !== 'number' || typeof h.price !== 'number' || h.was === h.price) return '';
+    var drop = h.price < h.was;
+    var when = h.priceChanged ? ' ' + localDate(h.priceChanged.slice(0, 10)).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+    return '<span class="price-was">' + money(h.was) + '</span><span class="price-tag' + (drop ? ' drop' : '') + '">' + (drop ? 'Price drop' : 'Price up') + esc(when) + '</span>';
+  }
+
   function reactBlock(h){
     if(!REACT) return '';
     return '<div class="react" data-home="' + h._id + '"><span class="react-q">What do you think?</span>' +
@@ -152,20 +192,21 @@
     var acts = (TOUR ? '' : mapButtons(fullAddress(h))) +
       (url ? '<a class="btn btn-soft" href="' + esc(url) + '" target="_blank" rel="noopener">Full listing ' + ICON.out + '</a>' : '') +
       '<a class="btn btn-soft" href="' + sms(h) + '">' + ICON.msg + 'Text me about it</a>';
-    var cls = 'home' + (opts.inPop ? '' : ' reveal') + (fresh ? ' is-fresh' : '');
+    var kind = statusKind(h);
+    var cls = 'home' + (opts.inPop ? '' : ' reveal') + (fresh ? ' is-fresh' : '') + (kind ? ' is-' + kind : '');
     return '<article class="' + cls + '"' + (REACT ? ' data-home="' + h._id + '"' : '') + (opts.inPop ? '' : ' id="stop-' + (i + 1) + '"') + '>' +
       '<div class="photo">' + img +
         (TOUR ? '<span class="badge" aria-label="Stop ' + h._num + ' of ' + homes.length + '"><b>' + h._num + '</b>of ' + homes.length + '</span>'
                : '<span class="badge solo" aria-label="Home ' + h._num + '"><b>' + h._num + '</b></span>') +
-        (h.status ? '<span class="status">' + esc(h.status) + '</span>' : '') +
+        (h.status ? '<span class="status' + (kind ? ' ' + kind : '') + '">' + esc(h.status) + '</span>' : '') +
         (REACT ? '<span class="react-badge" hidden></span>' : '') +
       '</div>' +
       '<div class="body">' +
-        '<div class="headline"><span class="price">' + money(h.price) + '</span>' +
+        '<div class="headline"><span class="price-group"><span class="price">' + money(h.price) + '</span>' + priceChange(h) + '</span>' +
           (fresh ? '<span class="fresh-pill">Fresh pick</span>' : '') +
           (TOUR && h.time ? '<span class="time"><span class="now-pill">Now</span>' + clock(h.time) + '</span>' : '') + '</div>' +
         '<div class="addr">' + esc(h.address) + (h.city ? '<span>' + esc(h.city) + '</span>' : '') + '</div>' +
-        specsList(h) +
+        specsList(h) + openHouseLine(h) +
         (h.why ? '<div class="why"><span class="eyebrow">' + esc(D.whyLabel || 'Why I picked this one') + '</span><p>' + esc(h.why) + '</p></div>' : '') +
         (h.headsUp ? '<p class="heads-up"><strong>Heads up:</strong> ' + esc(h.headsUp) + '</p>' : '') +
         reactBlock(h) +
@@ -179,11 +220,13 @@
     if(h.beds != null) bits.push(esc(h.beds) + ' bd');
     if(h.baths != null) bits.push(esc(h.baths) + ' ba');
     if(h.sqft) bits.push(Number(h.sqft).toLocaleString('en-US') + ' sq ft');
-    var photo = safeUrl(h.photo);
-    return '<article class="tile reveal"' + (REACT ? ' data-home="' + h._id + '"' : '') + ' tabindex="0" aria-label="' + esc(h.address) + ', ' + money(h.price) + '. Show details">' +
+    var photo = safeUrl(h.photo), kind = statusKind(h);
+    var drop = typeof h.was === 'number' && typeof h.price === 'number' && h.price < h.was;
+    return '<article class="tile reveal' + (kind ? ' is-' + kind : '') + '"' + (REACT ? ' data-home="' + h._id + '"' : '') + ' tabindex="0" aria-label="' + esc(h.address) + ', ' + money(h.price) + '. Show details">' +
       '<div class="tile-photo">' + (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy">' : '') + '<span class="tile-num">' + h._num + '</span>' +
+        (kind ? '<span class="tile-status ' + kind + '">' + esc(h.status) + '</span>' : '') +
         (REACT ? '<span class="react-badge" hidden></span>' : '') + '</div>' +
-      '<div class="tile-body"><span class="tile-price">' + money(h.price) + '</span><span class="tile-addr">' + esc(h.address) + '</span>' +
+      '<div class="tile-body"><span class="tile-price">' + money(h.price) + (drop ? '<span class="tile-drop">Price drop</span>' : '') + '</span><span class="tile-addr">' + esc(h.address) + '</span>' +
         '<span class="tile-specs">' + bits.join(' · ') + '</span><span class="tile-more">See details</span></div>' +
       '<div class="tile-pop"><button class="tile-close" type="button">Close</button>' + card(h, i, {inPop:true}) + '</div>' +
     '</article>';
@@ -209,7 +252,8 @@
         (homes[0] && homes[0].time ? '<span>Starts <strong>' + clock(homes[0].time) + '</strong></span>' : '') +
         '<span><strong>' + homes.length + '</strong> ' + (homes.length === 1 ? 'stop' : 'stops') + '</span>';
     } else {
-      meta = '<span><strong>' + homes.length + (homes.length === 1 ? ' home' : ' homes') + '</strong> to look through</span>' + (D.area ? '<span>' + esc(D.area) + '</span>' : '');
+      meta = '<span><strong>' + homes.length + (homes.length === 1 ? ' home' : ' homes') + '</strong> to look through</span>' + (D.area ? '<span>' + esc(D.area) + '</span>' : '') +
+        (D.checked ? '<span class="checked">Prices &amp; open houses updated ' + esc(localDate(D.checked.slice(0, 10)).toLocaleDateString('en-US', {month:'short', day:'numeric'})) + '</span>' : '');
     }
     var routeAll = '';
     if(TOUR && homes.length > 1){

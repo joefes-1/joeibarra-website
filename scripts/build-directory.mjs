@@ -23,16 +23,23 @@ function expires(D) {
   return addDays(base, D.expiresDays || 30)
 }
 
-export function readPages() {
+// Every homes/*.html page with its window.HOMES data: [{ file, slug, D }]
+export function loadAll() {
   const dir = path.join(root, 'homes')
-  const pages = []
-  for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.html')).sort()) {
+  return fs.readdirSync(dir).filter(f => f.endsWith('.html')).sort().map(file => {
     const html = fs.readFileSync(path.join(dir, file), 'utf8')
     const m = html.match(/window\.HOMES\s*=\s*(\{[\s\S]*?\});\s*<\/script>/)
     if (!m) throw new Error(`${file}: no window.HOMES block`)
     const D = vm.runInNewContext('(' + m[1] + ')')   // our own repo files, not user input
+    return { file: path.join('homes', file), slug: file.replace(/\.html$/, ''), D }
+  })
+}
+export { expires }
+
+export function readPages() {
+  const pages = []
+  for (const { slug, D } of loadAll()) {
     if (D.sample) continue
-    const slug = file.replace(/\.html$/, '')
     const listings = (D.listings || []).map((h, i) => ({
       id: homeId(h, i), address: h.address || '', city: h.city || '', price: h.price ?? null,
       photo: h.photo || '', added: h.added || null, time: h.time || null

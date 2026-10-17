@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow"><title>Test fixture</title><link rel="stylesheet" href="/homes/homes.css"></head>
+<body><div id="app"></div>
+<script>
+/* Test fixture for tests/run.py (not a real client page): daily-refresh fields */
+window.HOMES = {
+  "mode": "showcase",
+  "page": "test-updates",
+  "client": "Uma",
+  "created": "2026-10-16",
+  "checked": "2026-10-18",
+  "title": "Daily refresh test",
+  "listings": [
+    {
+      "address": "1 Drop St", "city": "Walnut, CA", "mls": "T1", "price": 1200000, "status": "For sale",
+      "was": 1250000, "priceChanged": "2026-10-17",
+      "openHouses": [
+        { "date": "2026-10-17", "start": "13:00", "end": "16:00" },
+        { "date": "2026-10-18", "start": "13:30", "end": "16:00" },
+        { "date": "2026-10-24", "start": "11:00", "end": "14:00" }
+      ]
+    },
+    { "address": "2 Pending Rd", "city": "Walnut, CA", "mls": "T2", "price": 900000, "status": "Pending" },
+    { "address": "3 Sold Ct", "city": "Walnut, CA", "mls": "T3", "price": 950000, "status": "Sold" },
+    { "address": "4 Up Ave", "city": "Walnut, CA", "mls": "T4", "price": 1000000, "status": "For sale", "was": 990000, "added": "2026-10-18T09:00" }
+  ]
+};
+</script>
+<script src="/homes/homes.js"></script>
+</body></html>

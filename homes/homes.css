@@ -81,6 +81,20 @@ p{margin:0}
 .why p{font-size:16px}
 .heads-up{font-size:14px;color:var(--muted);background:var(--slate-tint);border-radius:10px;padding:10px 12px}
 .heads-up strong{color:var(--slate-deep)}
+/* Daily refresh: price changes, open houses, pending/sold */
+.price-group{display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.price-was{font-size:15px;color:var(--muted);text-decoration:line-through;font-variant-numeric:tabular-nums}
+.price-tag{align-self:center;display:inline-flex;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:var(--slate-tint);color:var(--slate-deep)}
+.price-tag.drop{background:#FDECEA;color:#9B2C1F}
+.open-house{font-size:14px;color:var(--body);background:#FFF7E0;border-radius:10px;padding:10px 12px;line-height:1.45}
+.open-house strong{color:#6E5100;margin-right:4px}
+.open-house .oh{white-space:nowrap}
+.status.pending,.tile-status.pending{background:#B7791F}
+.status.sold,.status.off,.tile-status.sold,.tile-status.off{background:#8A3B2B}
+.home.is-sold .photo img,.home.is-off .photo img,.tile.is-sold .tile-photo img,.tile.is-off .tile-photo img{filter:grayscale(.7);opacity:.8}
+.tile-status{position:absolute;left:8px;bottom:8px;color:#fff;border-radius:999px;padding:3px 8px;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+.tile-drop{display:block;font-family:var(--sans);font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9B2C1F;margin-top:2px}
+.meta .checked{font-size:13px}
 
 /* ---------- Fresh picks: homes added after the link was sent, in dated batches ---------- */
 .group-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0 16px}
@@ -137,7 +151,7 @@ p{margin:0}
   .tile-pop .specs li{font-size:12.5px;padding:4px 9px;border-radius:8px}
   .tile-pop .why{padding-left:11px}
   .tile-pop .why p{font-size:14px;line-height:1.45}
-  .tile-pop .heads-up{font-size:12.5px;padding:8px 10px}
+  .tile-pop .heads-up,.tile-pop .open-house{font-size:12.5px;padding:8px 10px}
   .tile-pop .actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .tile-pop .actions .btn{min-height:34px;padding:0 10px;font-size:12.5px;gap:6px}
   .tile-pop .actions .btn svg{width:13px;height:13px}

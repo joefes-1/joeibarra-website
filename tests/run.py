@@ -405,11 +405,35 @@ async def admin(browser, base):
     await pg.context.close()
 
 
+async def updates(browser, base):
+    print('Daily refresh fields: price drop/up, open houses that drop off, pending/sold flags, updated date')
+    p = await open_page(browser, base, '/tests/fixtures/updates.html', dt.datetime(2026, 10, 18, 15, 0))
+    check(not p.errors, f'updates fixture script errors: {p.errors}')
+    oh = await p.evaluate("[...document.querySelectorAll('.tile-pop .open-house')].map(e=>e.textContent)")
+    check(oh == ['Open house Sun, Oct 18, 1:30 to 4 PM · Sat, Oct 24, 11 AM to 2 PM'], f'open houses should drop past ones and read cleanly, got {oh}')
+    tags = await p.evaluate("[...document.querySelectorAll('.price-tag')].map(e=>e.textContent)")
+    check(sorted(tags) == ['Price drop Oct 17', 'Price up'], f'price change tags wrong, got {tags}')
+    was = await p.evaluate("document.querySelector('.tile-pop .price-was').textContent")
+    check(was == '$1,250,000', f'old price should show struck through, got {was}')
+    flags = await p.evaluate("[...document.querySelectorAll('.tile-status')].map(e=>e.textContent.toLowerCase())")
+    check(flags == ['pending', 'sold'], f'past-pick tiles should flag pending/sold, got {flags}')
+    check(await p.evaluate("document.querySelectorAll('.tile-drop').length") == 1, 'price drop should show on the tile')
+    check('updated oct 18' in await text(p), 'intro should say when prices and open houses were last updated')
+    await p.context.close()
+    p = await open_page(browser, base, '/tests/fixtures/updates.html', dt.datetime(2026, 10, 18, 16, 1))
+    oh = await p.evaluate("[...document.querySelectorAll('.tile-pop .open-house')].map(e=>e.textContent)")
+    check(oh == ['Open house Sat, Oct 24, 11 AM to 2 PM'], f'an open house should disappear once it ends, got {oh}')
+    await p.context.close()
+    p = await open_page(browser, base, '/tests/fixtures/updates.html', dt.datetime(2026, 10, 24, 14, 1))
+    check(await p.evaluate("document.querySelectorAll('.open-house').length") == 0, 'no open house line once they have all passed')
+    await p.context.close()
+
+
 async def main():
     base = serve()
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
-        for suite in (real_pages, fresh_picks, tours, edge_cases, reactions, tiles, removal, directory, admin):
+        for suite in (real_pages, fresh_picks, tours, edge_cases, updates, reactions, tiles, removal, directory, admin):
             await suite(browser, base)
         await browser.close()
     print('\n%d checks passed, %d failed' % (PASSES, len(FAILS)))
