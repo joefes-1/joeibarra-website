@@ -199,11 +199,11 @@
 
       '<section class="panel"><div class="panel-head"><h2>Client reactions</h2><span class="count">' +
         (shown.length ? shown.length + (shown.length === 1 ? ' reaction' : ' reactions') + (fresh ? ' · ' + fresh + ' new' : '') : '') +
-        (shown.length > 1 ? '<button class="hide-all" type="button">Hide all</button>' : '') + '</span></div>' +
+        (shown.length > 1 ? '<button class="hide-all" type="button">Mark all seen</button>' : '') + '</span></div>' +
         (shown.length ? '<ul class="feed">' + shown.map(function(f){ return feedItem(f, lastSeen, false); }).join('') + '</ul>'
           : '<div class="empty-box">' + (feed.length ? 'You’re all caught up. New reactions will show up here.'
                                                      : 'No reactions yet. When a client taps ❤️ or 👎 or leaves a note, it shows up here.') + '</div>') +
-        (hidden.length ? '<details class="expired hidden-rx"><summary>Hidden reactions (' + hidden.length + ')</summary><ul class="feed">' +
+        (hidden.length ? '<details class="expired hidden-rx"><summary>Old reactions (' + hidden.length + ')</summary><ul class="feed">' +
           hidden.map(function(f){ return feedItem(f, '', true); }).join('') + '</ul></details>' : '') +
       '</section>' +
 
@@ -227,7 +227,7 @@
     var photo = safeUrl(f.home.photo);
     var isNew = lastSeen && f.at > lastSeen;
     var btn = '<button class="rx-hide" type="button" data-action="' + (isHiddenItem ? 'unhide' : 'hide') + '" aria-label="' +
-      (isHiddenItem ? 'Unhide' : 'Hide') + ' this reaction">' + (isHiddenItem ? 'Unhide' : 'Hide') + '</button>';
+      (isHiddenItem ? 'Move this reaction back to the feed' : 'Mark this reaction as seen') + '">' + (isHiddenItem ? 'Move back' : 'Seen') + '</button>';
     return '<li class="rx' + (isNew ? ' is-new' : '') + '" data-page="' + esc(f.page.page) + '" data-home="' + esc(f.homeId) + '" data-at="' + esc(f.at) + '">' + btn +
       (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'ph\'}))">' : '<div class="ph"></div>') +
       '<div><div class="rx-top"><span class="rx-what">' + esc(what) + '</span>' + (isNew ? '<span class="rx-new">New</span>' : '') +
@@ -288,7 +288,7 @@
       .then(function(res){ if(!res.ok) throw new Error(res.status); load(current); })
       .catch(function(){ b.disabled = false; b.textContent = remove ? 'Remove page' : 'Restore'; alert('That didn\u2019t go through. Try again.'); });
   });
-  // Hide a reaction once you've seen it (or Hide all / Unhide). Saved on the site, so it holds on your phone too.
+  // Mark a reaction Seen (moves it to Old reactions), Mark all seen, or Move back. Saved on the site, so it holds on your phone too.
   document.addEventListener('click', function(e){
     var one = e.target.closest('.rx-hide'), all = e.target.closest('.hide-all');
     if(!one && !all) return;

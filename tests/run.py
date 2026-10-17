@@ -377,8 +377,10 @@ async def admin(browser, base):
     pg = await page_with(200, data, stored='test-password')
     shown = await pg.evaluate("[...document.querySelectorAll('.panel > .feed .rx')].map(e=>e.dataset.home)")
     check(shown == ['B2'], f'hidden reaction should leave the feed, changed one should come back, got {shown}')
-    check(await pg.locator('details.hidden-rx .rx').count() == 1, 'hidden reactions should be tucked into "Hidden reactions"')
-    check(await pg.locator('.hide-all').count() == 0, 'Hide all only shows with 2+ reactions')
+    check(await pg.locator('details.hidden-rx .rx').count() == 1, 'seen reactions should be tucked into "Old reactions"')
+    check(await pg.locator('.hide-all').count() == 0, 'Mark all seen only shows with 2+ reactions')
+    labels = await pg.evaluate("[document.querySelector('.panel > .feed .rx-hide').textContent, document.querySelector('details.hidden-rx summary').textContent]")
+    check(labels == ['Seen', 'Old reactions (1)'], f'button should say Seen and the folded list Old reactions, got {labels}')
     posts = []
     async def record2(route):
         if route.request.method == 'POST':
