@@ -1,6 +1,7 @@
 // Private data for Joseph's /admin page: every client page + every client reaction.
 // GET  /api/admin                          -> { pages, reactions, removed }
 // POST /api/admin { action, page }         -> action "remove" takes a client page offline, "restore" brings it back
+// POST /api/admin { action, items }        -> action "hide"/"unhide" a reaction in the feed, items [{ page, home, at }]
 // Both need header "Authorization: Bearer <password>".
 // The password lives only in the Netlify environment variable ADMIN_PASSWORD (Functions scope).
 import { getStore } from "@netlify/blobs"
@@ -31,7 +32,23 @@ export default async (req: Request) => {
     let body: any
     try { body = await req.json() } catch { return json({ error: "Bad JSON" }, 400) }
     const page = String(body?.page || ""), action = String(body?.action || "")
-    if (!directory.pages.some((p) => p.page === page)) return json({ error: "Unknown page" }, 400)
+    const known = (p: string) => directory.pages.some((d) => d.page === p)
+
+    // Hide / unhide reactions in the feed: items [{ page, home, at }]. A hidden reaction comes back
+    // on its own if the client changes it later (its `at` moves past the hidden one).
+    if (action === "hide" || action === "unhide") {
+      const items = Array.isArray(body?.items) ? body.items.slice(0, 500) : []
+      const clean = items
+        .map((i: any) => ({ page: String(i?.page || ""), home: String(i?.home || ""), at: String(i?.at || "") }))
+        .filter((i: any) => known(i.page) && /^[A-Za-z0-9-]{1,80}$/.test(i.home) && i.at.length <= 40)
+      if (!clean.length) return json({ error: "Nothing to change" }, 400)
+      await Promise.all(clean.map((i: any) => action === "hide"
+        ? admin.setJSON(`hidden/${i.page}/${i.home}`, { at: i.at })
+        : admin.delete(`hidden/${i.page}/${i.home}`)))
+      return json({ ok: true })
+    }
+
+    if (!known(page)) return json({ error: "Unknown page" }, 400)
     if (action === "remove") await admin.setJSON(`removed/${page}`, { at: new Date().toISOString() })
     else if (action === "restore") await admin.delete(`removed/${page}`)
     else return json({ error: "Unknown action" }, 400)
@@ -42,6 +59,15 @@ export default async (req: Request) => {
   const removed: Record<string, unknown> = {}
   const { blobs: removedKeys } = await admin.list({ prefix: "removed/" })
   await Promise.all(removedKeys.map(async ({ key }) => { removed[key.slice(8)] = await admin.get(key, { type: "json" }) }))
+
+  // Reactions Joseph hid from his feed: { "dolce-ibarra": { "<homeId>": "<reaction at>" } }
+  const hidden: Record<string, Record<string, string>> = {}
+  const { blobs: hiddenKeys } = await admin.list({ prefix: "hidden/" })
+  await Promise.all(hiddenKeys.map(async ({ key }) => {
+    const [, page, home] = key.split("/")
+    const v: any = await admin.get(key, { type: "json" })
+    if (page && home && v) (hidden[page] ||= {})[home] = String(v.at || "")
+  }))
 
   // All saved reactions, grouped by page: { "dolce-ibarra": { "<homeId>": { r, note, at } } }
   const store = getStore({ name: "client-reactions", consistency: "strong" })
@@ -54,7 +80,7 @@ export default async (req: Request) => {
       if (value && page && home) (reactions[page] ||= {})[home] = value
     })
   )
-  return json({ pages: directory.pages, reactions, removed })
+  return json({ pages: directory.pages, reactions, removed, hidden })
 }
 
 // A handful of tries per minute per visitor is plenty for Joseph and slows down password guessing.

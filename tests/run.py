@@ -350,6 +350,34 @@ async def admin(browser, base):
     await pg.locator('details.removed .page-action[data-action=restore]').click(); await pg.wait_for_timeout(300)
     check(len(posts) == 2 and posts[1][1] == {'action': 'restore', 'page': 'test-gone'}, f'Restore should POST restore, got {posts}')
     await pg.context.close()
+    # Hide reactions: hidden ones fold away; one the client changed since comes back
+    data = json.loads(json.dumps(ADMIN_DATA))
+    data['hidden'] = {'test-fresh': {'A1': '2026-10-21T17:00:00Z', 'B2': '2026-10-20T00:00:00Z'}}   # B2 changed after it was hidden
+    pg = await page_with(200, data, stored='test-password')
+    shown = await pg.evaluate("[...document.querySelectorAll('.panel > .feed .rx')].map(e=>e.dataset.home)")
+    check(shown == ['B2'], f'hidden reaction should leave the feed, changed one should come back, got {shown}')
+    check(await pg.locator('details.hidden-rx .rx').count() == 1, 'hidden reactions should be tucked into "Hidden reactions"')
+    check(await pg.locator('.hide-all').count() == 0, 'Hide all only shows with 2+ reactions')
+    posts = []
+    async def record2(route):
+        if route.request.method == 'POST':
+            posts.append(json.loads(route.request.post_data))
+            return await route.fulfill(status=200, content_type='application/json', body='{"ok":true}')
+        await route.fulfill(status=200, content_type='application/json', body=json.dumps(data))
+    await pg.route('**/api/admin', record2)
+    await pg.locator('.panel > .feed .rx-hide').click(); await pg.wait_for_timeout(500)
+    check(posts and posts[0] == {'action': 'hide', 'items': [{'page': 'test-fresh', 'home': 'B2', 'at': '2026-10-21T18:30:00Z'}]},
+          f'Hide should POST that reaction, got {posts}')
+    await pg.locator('details.hidden-rx summary').click()
+    await pg.locator('details.hidden-rx .rx-hide').first.click(); await pg.wait_for_timeout(500)
+    check(len(posts) == 2 and posts[1]['action'] == 'unhide', f'Unhide should POST unhide, got {posts}')
+    await pg.context.close()
+    pg = await page_with(200, ADMIN_DATA, stored='test-password')
+    posts = []
+    await pg.route('**/api/admin', record2)
+    await pg.locator('.hide-all').click(); await pg.wait_for_timeout(500)
+    check(posts and posts[0]['action'] == 'hide' and len(posts[0]['items']) == 2, f'Hide all should hide every reaction showing, got {posts}')
+    await pg.context.close()
     # setup message when the password hasn't been added in Netlify yet
     pg = await page_with(503, {'error': 'setup'}, stored='x')
     check('ADMIN_PASSWORD' in await pg.inner_text('body'), 'admin should explain when the password is not set up yet')

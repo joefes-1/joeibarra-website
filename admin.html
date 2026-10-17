@@ -45,6 +45,16 @@
 .rx-home{font-size:14px;color:var(--body);line-height:1.35}
 .rx-home a{font-weight:700;text-decoration:none}
 .rx-note{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--body);margin-top:4px;line-height:1.35}
+.rx{position:relative;transition:opacity .25s,transform .25s}
+.rx-top{padding-right:58px}
+.rx-hide{position:absolute;top:8px;right:8px;background:var(--cream);border:0;border-radius:999px;padding:5px 11px;font:700 12px var(--sans);color:var(--muted);cursor:pointer}
+.rx-hide:hover,.rx-hide:focus-visible{background:var(--slate-tint);color:var(--slate-deep)}
+.rx-hide:disabled{opacity:.6;cursor:default}
+.rx.leaving{opacity:0;transform:translateX(12px)}
+.hide-all{margin-left:10px;background:none;border:0;padding:0;font:700 13px var(--sans);color:var(--slate);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.hidden-rx .feed{margin-top:12px}
+.hidden-rx .rx{opacity:.75}
+@media (prefers-reduced-motion:reduce){.rx{transition:none}}
 
 /* Page directory */
 .pages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
@@ -163,10 +173,14 @@
       Object.keys(reactions[pageId]).forEach(function(homeId){
         var v = reactions[pageId][homeId] || {};
         var home = (p.listings || []).filter(function(h){ return h.id === homeId; })[0] || {address:'A home no longer on the page'};
-        feed.push({page:p, home:home, r:v.r, note:v.note, at:v.at || ''});
+        feed.push({page:p, homeId:homeId, home:home, r:v.r, note:v.note, at:v.at || ''});
       });
     });
     feed.sort(function(a, b){ return a.at < b.at ? 1 : -1; });
+    // Reactions you hid stay hidden until the client changes them (new `at`)
+    var hiddenAt = data.hidden || {};
+    function isHidden(f){ var h = hiddenAt[f.page.page]; return !!(h && h[f.homeId] != null && h[f.homeId] >= f.at); }
+    var shown = feed.filter(function(f){ return !isHidden(f); }), hidden = feed.filter(isHidden);
 
     var counts = {};
     feed.forEach(function(f){ var c = counts[f.page.page] = counts[f.page.page] || {love:0, pass:0, note:0, last:''};
@@ -177,16 +191,20 @@
     function activity(p){ var c = counts[p.page] || {}; return [c.last || '', p.lastAdded || '', p.created || '', p.date || ''].sort().pop(); }
     active.sort(function(a, b){ return activity(a) < activity(b) ? 1 : -1; });
     expired.sort(function(a, b){ return (a.expires || '') < (b.expires || '') ? 1 : -1; });
-    var fresh = feed.filter(function(f){ return lastSeen && f.at > lastSeen; }).length;
+    var fresh = shown.filter(function(f){ return lastSeen && f.at > lastSeen; }).length;
 
     view.innerHTML =
       '<div class="head-row"><div><div class="eyebrow">Private</div><h1>Your client pages</h1></div>' +
         '<button class="btn btn-soft" id="refresh" type="button">Refresh</button></div>' +
 
       '<section class="panel"><div class="panel-head"><h2>Client reactions</h2><span class="count">' +
-        (feed.length ? feed.length + (feed.length === 1 ? ' reaction' : ' reactions') + (fresh ? ' · ' + fresh + ' new' : '') : '') + '</span></div>' +
-        (feed.length ? '<ul class="feed">' + feed.map(function(f){ return feedItem(f, lastSeen); }).join('') + '</ul>'
-                     : '<div class="empty-box">No reactions yet. When a client taps ❤️ or 👎 or leaves a note, it shows up here.</div>') +
+        (shown.length ? shown.length + (shown.length === 1 ? ' reaction' : ' reactions') + (fresh ? ' · ' + fresh + ' new' : '') : '') +
+        (shown.length > 1 ? '<button class="hide-all" type="button">Hide all</button>' : '') + '</span></div>' +
+        (shown.length ? '<ul class="feed">' + shown.map(function(f){ return feedItem(f, lastSeen, false); }).join('') + '</ul>'
+          : '<div class="empty-box">' + (feed.length ? 'You’re all caught up. New reactions will show up here.'
+                                                     : 'No reactions yet. When a client taps ❤️ or 👎 or leaves a note, it shows up here.') + '</div>') +
+        (hidden.length ? '<details class="expired hidden-rx"><summary>Hidden reactions (' + hidden.length + ')</summary><ul class="feed">' +
+          hidden.map(function(f){ return feedItem(f, '', true); }).join('') + '</ul></details>' : '') +
       '</section>' +
 
       '<section class="panel"><div class="panel-head"><h2>Active client pages</h2><span class="count">' + active.length + '</span></div>' +
@@ -203,12 +221,14 @@
     document.getElementById('refresh').addEventListener('click', function(){ load(current); });
   }
 
-  function feedItem(f, lastSeen){
+  function feedItem(f, lastSeen, isHiddenItem){
     var who = f.page.client || 'Client', rx = REACTION[f.r];
     var what = rx ? rx.icon + ' ' + rx.text(who) : '📝 ' + who + ' left a note';
     var photo = safeUrl(f.home.photo);
     var isNew = lastSeen && f.at > lastSeen;
-    return '<li class="rx' + (isNew ? ' is-new' : '') + '">' +
+    var btn = '<button class="rx-hide" type="button" data-action="' + (isHiddenItem ? 'unhide' : 'hide') + '" aria-label="' +
+      (isHiddenItem ? 'Unhide' : 'Hide') + ' this reaction">' + (isHiddenItem ? 'Unhide' : 'Hide') + '</button>';
+    return '<li class="rx' + (isNew ? ' is-new' : '') + '" data-page="' + esc(f.page.page) + '" data-home="' + esc(f.homeId) + '" data-at="' + esc(f.at) + '">' + btn +
       (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'ph\'}))">' : '<div class="ph"></div>') +
       '<div><div class="rx-top"><span class="rx-what">' + esc(what) + '</span>' + (isNew ? '<span class="rx-new">New</span>' : '') +
         '<span class="rx-when">' + (f.at ? esc(ago(f.at)) : '') + '</span></div>' +
@@ -267,6 +287,21 @@
       body: JSON.stringify({action:b.dataset.action, page:b.dataset.page})})
       .then(function(res){ if(!res.ok) throw new Error(res.status); load(current); })
       .catch(function(){ b.disabled = false; b.textContent = remove ? 'Remove page' : 'Restore'; alert('That didn\u2019t go through. Try again.'); });
+  });
+  // Hide a reaction once you've seen it (or Hide all / Unhide). Saved on the site, so it holds on your phone too.
+  document.addEventListener('click', function(e){
+    var one = e.target.closest('.rx-hide'), all = e.target.closest('.hide-all');
+    if(!one && !all) return;
+    var rows = one ? [one.closest('.rx')] : [].slice.call(document.querySelectorAll('.panel > .feed .rx'));
+    var action = one ? one.dataset.action : 'hide';
+    var items = rows.map(function(li){ return {page:li.dataset.page, home:li.dataset.home, at:li.dataset.at}; });
+    var btn = one || all; btn.disabled = true;
+    rows.forEach(function(li){ li.classList.add('leaving'); });
+    fetch('/api/admin', {method:'POST', cache:'no-store',
+      headers:{'Content-Type':'application/json', Authorization:'Bearer ' + current},
+      body: JSON.stringify({action:action, items:items})})
+      .then(function(res){ if(!res.ok) throw new Error(res.status); setTimeout(function(){ load(current); }, 200); })
+      .catch(function(){ btn.disabled = false; rows.forEach(function(li){ li.classList.remove('leaving'); }); alert('That didn’t go through. Try again.'); });
   });
   signout.addEventListener('click', function(){ set(KEY, null); current = null; showLogin(); });
 
