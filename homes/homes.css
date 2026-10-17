@@ -241,3 +241,8 @@ footer .wrap{display:flex;flex-direction:column;align-items:center;gap:14px;text
   .top .btn,.actions,.route-all,.sample-flag,.react-btns,.react-note{display:none!important}
   .home{break-inside:avoid}
 }
+
+/* Deep link from /admin: brief highlight on a Fresh pick card */
+.home.spotlight{animation:spotlight 2.4s ease-out}
+@keyframes spotlight{0%,35%{box-shadow:0 0 0 4px var(--slate),0 10px 30px rgba(31,42,55,.18)}100%{box-shadow:none}}
+@media (prefers-reduced-motion:reduce){.home.spotlight{animation:none;outline:3px solid var(--slate);outline-offset:4px}}

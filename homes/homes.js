@@ -499,6 +499,33 @@
     els.forEach(function(e){ io.observe(e); });
   }
 
+  /* ---------- Deep link: /homes/<page>#h-<homeId> (used by Joseph's /admin reaction feed) ----------
+     Scrolls to that home. A Past pick opens its pop-up card (hover view on a computer, tapped-open on a phone);
+     a Fresh pick gets a short highlight. */
+  function initDeepLink(){
+    function go(){
+      var m = /^#h-([A-Za-z0-9-]{1,80})$/.exec(location.hash);
+      if(!m) return;
+      var el = document.querySelector('.tile[data-home="' + m[1] + '"]') ||
+               document.querySelector('#app .home[data-home="' + m[1] + '"]:not(.tile-pop .home)');
+      if(!el) return;
+      el.classList.add('in');
+      if(el.classList.contains('tile')){
+        if(matchMedia('(hover: hover) and (pointer: fine)').matches){
+          el.scrollIntoView({block:'center'});
+          setTimeout(function(){ el.focus({preventScroll:true}); }, 80);   // focus opens the pop-up, same as hovering
+        } else if(!el.classList.contains('open')){
+          el.click();                                                        // same as tapping it
+        }
+      } else {
+        el.scrollIntoView({block:'center'});
+        el.classList.remove('spotlight'); void el.offsetWidth; el.classList.add('spotlight');
+      }
+    }
+    setTimeout(go, 150);
+    addEventListener('hashchange', go);
+  }
+
   /* ---------- Go ---------- */
   validate();
   var exp = expiresAt();
@@ -508,4 +535,5 @@
   initTiles();
   initLiveTour();
   initReveal();
+  initDeepLink();
 })();

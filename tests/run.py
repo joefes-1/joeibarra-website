@@ -340,7 +340,7 @@ async def admin(browser, base):
     async with pg.context.expect_page() as opened:
         await pg.mouse.click(box['x'] + box['width'] * 0.5, box['y'] + box['height'] - 6)
     new = await opened.value
-    check('/tests/fixtures/fresh' in new.url, f'clicking a reaction card should open that client page, opened {new.url}')
+    check(new.url.endswith('/tests/fixtures/fresh#h-B2'), f'clicking a reaction card should open that home on the client page, opened {new.url}')
     await new.close()
     check(await pg.locator('.rx-home a').count() == 0, 'reaction cards should not have a separate page hyperlink')
     # the whole card opens the client page; Copy link does not
@@ -440,11 +440,42 @@ async def updates(browser, base):
     await p.context.close()
 
 
+async def deep_link(browser, base):
+    print('Deep link from /admin: opens that home (pop-up for a past pick, highlight for a fresh pick)')
+    when = dt.datetime(2026, 10, 21, 10, 0)
+    # computer: a past pick's pop-up opens like it's hovered
+    p = await open_page(browser, base, '/tests/fixtures/fresh.html#h-' + 'OLD-2', when)
+    ids = await p.evaluate("[...document.querySelectorAll('.tile')].map(t=>t.dataset.home)")
+    await p.context.close()
+    target = ids[-1]
+    p = await open_page(browser, base, '/tests/fixtures/fresh.html#h-' + target, when)
+    await p.wait_for_timeout(400)
+    vis = await p.evaluate(f"getComputedStyle(document.querySelector('.tile[data-home=\"{target}\"] .tile-pop')).visibility")
+    check(vis == 'visible', f'deep link to a past pick should open its pop-up card on a computer, got {vis}')
+    inview = await p.evaluate(f"(r => r.top >= 0 && r.bottom <= innerHeight)(document.querySelector('.tile[data-home=\"{target}\"]').getBoundingClientRect())")
+    check(inview, 'deep-linked past pick should be scrolled into view')
+    await p.context.close()
+    # phone: the past pick opens like it was tapped
+    p = await open_page(browser, base, '/tests/fixtures/fresh.html#h-' + target, when, device='phone')
+    await p.wait_for_timeout(400)
+    check(await p.evaluate(f"document.querySelector('.tile[data-home=\"{target}\"]').classList.contains('open')"), 'deep link should open the past pick on a phone')
+    await p.context.close()
+    # fresh pick: highlighted
+    p = await open_page(browser, base, '/tests/fixtures/fresh.html', when)
+    fresh = await p.evaluate("document.querySelector('#app .home.is-fresh').dataset.home")
+    await p.context.close()
+    p = await open_page(browser, base, '/tests/fixtures/fresh.html#h-' + fresh, when)
+    await p.wait_for_timeout(400)
+    check(await p.evaluate(f"document.querySelector('#app .home[data-home=\"{fresh}\"]').classList.contains('spotlight')"), 'deep link to a fresh pick should highlight it')
+    check(not p.errors, f'deep link script errors: {p.errors}')
+    await p.context.close()
+
+
 async def main():
     base = serve()
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
-        for suite in (real_pages, fresh_picks, tours, edge_cases, updates, reactions, tiles, removal, directory, admin):
+        for suite in (real_pages, fresh_picks, tours, edge_cases, updates, reactions, tiles, deep_link, removal, directory, admin):
             await suite(browser, base)
         await browser.close()
     print('\n%d checks passed, %d failed' % (PASSES, len(FAILS)))
