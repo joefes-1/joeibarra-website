@@ -43,11 +43,16 @@
 .rx-when{font-size:12.5px;color:var(--muted)}
 .rx-new{display:inline-flex;background:var(--green-tint);color:var(--green-deep);border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
 .rx-home{font-size:14px;color:var(--body);line-height:1.35}
-.rx-home a{font-weight:700;text-decoration:none}
+.rx-link{text-decoration:none}
+/* The whole reaction card opens the client's page; the Seen button sits above the link */
+.rx-link::after{content:"";position:absolute;inset:0;border-radius:inherit;z-index:1}
+.rx-link:focus-visible{outline:none}
+.rx:has(.rx-link):hover,.rx:has(.rx-link:focus-visible){border-color:var(--slate);box-shadow:0 6px 18px rgba(31,42,55,.08)}
+.rx:has(.rx-link:focus-visible){box-shadow:0 0 0 3px var(--slate-tint)}
 .rx-note{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--body);margin-top:4px;line-height:1.35}
 .rx{position:relative;transition:opacity .25s,transform .25s}
 .rx-top{padding-right:58px}
-.rx-hide{position:absolute;top:8px;right:8px;background:var(--cream);border:0;border-radius:999px;padding:5px 11px;font:700 12px var(--sans);color:var(--muted);cursor:pointer}
+.rx-hide{position:absolute;z-index:2;top:8px;right:8px;background:var(--cream);border:0;border-radius:999px;padding:5px 11px;font:700 12px var(--sans);color:var(--muted);cursor:pointer}
 .rx-hide:hover,.rx-hide:focus-visible{background:var(--slate-tint);color:var(--slate-deep)}
 .rx-hide:disabled{opacity:.6;cursor:default}
 .rx.leaving{opacity:0;transform:translateX(12px)}
@@ -230,10 +235,9 @@
       (isHiddenItem ? 'Move this reaction back to the feed' : 'Mark this reaction as seen') + '">' + (isHiddenItem ? 'Move back' : 'Seen') + '</button>';
     return '<li class="rx' + (isNew ? ' is-new' : '') + '" data-page="' + esc(f.page.page) + '" data-home="' + esc(f.homeId) + '" data-at="' + esc(f.at) + '">' + btn +
       (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'ph\'}))">' : '<div class="ph"></div>') +
-      '<div><div class="rx-top"><span class="rx-what">' + esc(what) + '</span>' + (isNew ? '<span class="rx-new">New</span>' : '') +
+      '<div><div class="rx-top"><a class="rx-what rx-link" href="' + esc(f.page.path) + '" target="_blank" rel="noopener" aria-label="' + esc(what + ' – open ' + who + '\u2019s page') + '">' + esc(what) + '</a>' + (isNew ? '<span class="rx-new">New</span>' : '') +
         '<span class="rx-when">' + (f.at ? esc(ago(f.at)) : '') + '</span></div>' +
-      '<div class="rx-home">' + esc(f.home.address) + (f.home.price != null ? ' · ' + money(f.home.price) : '') +
-        ' · <a href="' + esc(f.page.path) + '" target="_blank" rel="noopener">' + esc(who) + '’s page</a></div>' +
+      '<div class="rx-home">' + esc(f.home.address) + (f.home.price != null ? ' · ' + money(f.home.price) : '') + '</div>' +
       (f.note ? '<p class="rx-note">“' + esc(f.note) + '”</p>' : '') +
       '</div></li>';
   }

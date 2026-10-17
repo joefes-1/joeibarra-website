@@ -334,6 +334,15 @@ async def admin(browser, base):
     check(wide <= 0, f'admin scrolls sideways on a phone by {wide}px')
     link = await pg.locator('.copy').first.get_attribute('data-link')
     check(link and not link.endswith('.html'), f'copied links should not end in .html, got {link}')
+    # the whole reaction card opens the client's page; Seen does not
+    rx = pg.locator('.panel > .feed .rx').first
+    box = await rx.bounding_box()
+    async with pg.context.expect_page() as opened:
+        await pg.mouse.click(box['x'] + box['width'] * 0.5, box['y'] + box['height'] - 6)
+    new = await opened.value
+    check('/tests/fixtures/fresh' in new.url, f'clicking a reaction card should open that client page, opened {new.url}')
+    await new.close()
+    check(await pg.locator('.rx-home a').count() == 0, 'reaction cards should not have a separate page hyperlink')
     # the whole card opens the client page; Copy link does not
     card = pg.locator('.panel .pg').first
     box = await card.bounding_box()
