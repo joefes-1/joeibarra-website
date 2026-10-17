@@ -118,7 +118,7 @@ async def fresh_picks(browser, base):
     nums = await p.evaluate(nums_js)
     check(nums == ['5 Fresh Ave=5', '4 Fresh Ave=4', '3 Fresh Ave=3', '1 Original Ln=1', '2 Original Ln=2'], f'home numbers should not follow display order, got {nums}')
     badge = await p.evaluate("document.querySelector('.home .badge').textContent")
-    check(badge.endswith('Home 5'), f'showcase badge should read "Home 5" (no "of N"), got {badge}')
+    check(badge == '5', f'showcase badge should be just the number (no repeated "Home 5"), got {badge!r}')
     await p.context.close()
     # a pinned `num` (set after a home is taken off) holds, and later homes count on from it
     p = await browser.new_page()

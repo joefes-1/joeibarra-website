@@ -155,7 +155,8 @@
     var cls = 'home' + (opts.inPop ? '' : ' reveal') + (fresh ? ' is-fresh' : '');
     return '<article class="' + cls + '"' + (REACT ? ' data-home="' + h._id + '"' : '') + (opts.inPop ? '' : ' id="stop-' + (i + 1) + '"') + '>' +
       '<div class="photo">' + img +
-        '<span class="badge"><b>' + h._num + '</b>' + (TOUR ? 'Stop ' + h._num + ' of ' + homes.length : 'Home ' + h._num) + '</span>' +
+        (TOUR ? '<span class="badge" aria-label="Stop ' + h._num + ' of ' + homes.length + '"><b>' + h._num + '</b>of ' + homes.length + '</span>'
+               : '<span class="badge solo" aria-label="Home ' + h._num + '"><b>' + h._num + '</b></span>') +
         (h.status ? '<span class="status">' + esc(h.status) + '</span>' : '') +
         (REACT ? '<span class="react-badge" hidden></span>' : '') +
       '</div>' +

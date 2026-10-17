@@ -65,6 +65,8 @@ p{margin:0}
 .photo-link:hover .photo-hint,.photo-link:focus-visible .photo-hint{background:var(--slate);color:#fff}
 .badge{position:absolute;left:14px;top:14px;display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--ink);border-radius:999px;padding:6px 12px 6px 6px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(31,31,31,.14);pointer-events:none}
 .badge b{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--slate);color:#fff;align-items:center;justify-content:center;font-size:13px}
+.badge.solo{padding:5px}
+.badge.solo b{width:30px;height:30px;font-size:14px}
 .status{position:absolute;right:14px;top:14px;background:var(--slate);color:#fff;border-radius:999px;padding:5px 12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;pointer-events:none}
 .body{padding:clamp(18px,3vw,26px);display:flex;flex-direction:column;gap:14px}
 .headline{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px}
@@ -124,6 +126,7 @@ p{margin:0}
   .tile-pop .photo img{aspect-ratio:2/1}
   .tile-pop .badge{left:10px;top:10px;font-size:12px;padding:4px 10px 4px 4px}
   .tile-pop .badge b{width:22px;height:22px;font-size:12px}
+  .tile-pop .badge.solo{padding:4px}
   .tile-pop .status{right:10px;top:10px;font-size:10px;padding:4px 10px}
   .tile-pop .photo-hint{right:10px;bottom:10px;font-size:11.5px;padding:5px 10px}
   .tile-pop .body{padding:14px 16px 16px;gap:9px}
