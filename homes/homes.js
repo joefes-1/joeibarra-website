@@ -5,8 +5,8 @@
      mode:       "showcase" | "tour",
      page:       "dolce-ibarra",        // fixed id for saved reactions; matches the file name
      client:     "Dolce",               // first name, used in headings and reaction badges
-     created:    "2026-10-16",          // showcase: expires 14 days after this (or the newest `added`)
-     expiresDays: 14,                   // optional override
+     created:    "2026-10-16",          // showcase: expires 30 days after this (or the newest `added`)
+     expiresDays: 30,                   // optional override
      date:       "2026-10-17",          // tour only: the tour day (page shuts off 2 days after)
      sample:     true,                  // sample pages: banner, no expiry, no reactions
      title, note, area, whyLabel,
@@ -74,7 +74,7 @@
   }
 
   /* ---------- Expiry ---------- */
-  // Showcase: 14 days after `created` or the newest `added`, whichever is later.
+  // Showcase: 30 days after `created` or the newest `added`, whichever is later.
   // Tour: the day after the tour + 2 days (midnight local). Samples never expire.
   function expiresAt(){
     if(D.sample) return null;
@@ -87,7 +87,7 @@
     if(!D.created) return null;
     var base = D.created;
     homes.forEach(function(h){ if(h.added && h.added.slice(0, 10) > base) base = h.added.slice(0, 10); });
-    exp = localDate(base); exp.setDate(exp.getDate() + (D.expiresDays || 14));
+    exp = localDate(base); exp.setDate(exp.getDate() + (D.expiresDays || 30));
     return exp;
   }
 

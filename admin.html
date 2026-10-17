@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Client pages · Joseph Ibarra</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#3F5266">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Lato:wght@400;700&display=swap">
+<link rel="stylesheet" href="/homes/homes.css">
+<style>
+/* Private dashboard for Joseph: client reactions + client page directory. Data comes from /api/admin (password-locked). */
+.admin{padding-block:clamp(28px,5vw,48px) clamp(40px,6vw,72px)}
+.admin .wrap{display:flex;flex-direction:column;gap:28px}
+.admin h1{font-size:clamp(34px,5.5vw,48px)}
+.admin h2{font-size:clamp(26px,4vw,32px)}
+.head-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.head-row .btn{min-height:40px;padding:0 16px;font-size:13.5px}
+.panel{display:flex;flex-direction:column;gap:14px}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.count{font-size:14px;color:var(--muted)}
+.muted{color:var(--muted)}
+
+/* Login */
+.login{display:flex;flex-direction:column;gap:14px;max-width:420px}
+.login label{font-size:13px;font-weight:700;color:var(--ink)}
+.login .field{display:flex;gap:8px}
+.login input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--ink);background:#fff;border:1.5px solid #CFC8BA;border-radius:10px;padding:0 14px;min-height:48px}
+.login input:focus{outline:none;border-color:var(--slate);box-shadow:0 0 0 3px var(--slate-tint)}
+.msg{font-size:14px;font-weight:700;color:#8A3B2B}
+
+/* Reactions feed */
+.feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.rx{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;align-items:start;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}
+.rx.is-new{border-color:#8CC7A3;box-shadow:0 0 0 3px #EEF7F1}
+.rx img,.rx .ph{width:72px;height:56px;border-radius:9px;object-fit:cover;background:var(--cream)}
+.rx-top{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.rx-what{font-weight:700;color:var(--ink);font-size:15px}
+.rx-when{font-size:12.5px;color:var(--muted)}
+.rx-new{display:inline-flex;background:var(--green-tint);color:var(--green-deep);border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.rx-home{font-size:14px;color:var(--body);line-height:1.35}
+.rx-home a{font-weight:700;text-decoration:none}
+.rx-note{font-family:var(--serif);font-style:italic;font-size:17px;color:var(--body);margin-top:4px;line-height:1.35}
+
+/* Page directory */
+.pages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:640px){.pages{grid-template-columns:1fr}}
+.pg{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.pg-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pg-name{font-family:var(--serif);font-size:24px;color:var(--ink);line-height:1.1}
+.pill{display:inline-flex;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:var(--slate-tint);color:var(--slate-deep)}
+.pill.tour{background:#FFF4D6;color:#6E5100}
+.pg-line{font-size:14px;color:var(--body)}
+.pg-exp{font-size:13px;color:var(--muted)}
+.pg-exp.soon{color:#8A3B2B;font-weight:700}
+.pg-counts{display:flex;gap:12px;font-size:14px;color:var(--ink)}
+.pg .actions{margin-top:4px}
+.pg .actions .btn{min-height:38px;padding:0 14px;font-size:13px}
+.expired summary{cursor:pointer;font-weight:700;color:var(--slate);font-size:15px}
+.expired .pages{margin-top:12px}
+.expired .pg{opacity:.75}
+.empty-box{background:var(--cream);border-radius:14px;padding:16px;color:var(--muted);font-size:15px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><a class="brand" href="/">Joseph Ibarra<small>Client pages · private</small></a>
+  <button class="btn btn-ghost" id="signout" type="button" hidden>Sign out</button></div></header>
+
+<main class="admin"><div class="wrap" id="view">
+  <noscript><p>This page needs JavaScript.</p></noscript>
+</div></main>
+
+<script>
+(function(){
+  'use strict';
+  var KEY = 'joeibarra-admin-key', SEEN = 'joeibarra-admin-seen';
+  var view = document.getElementById('view'), signout = document.getElementById('signout');
+  var REACTION = {love:{icon:'❤️', text:function(c){ return c + ' loved it'; }},
+                  pass:{icon:'👎', text:function(c){ return 'Not for ' + c; }}};
+
+  // Browser storage can be blocked (private mode); the page still works, you'd just re-enter the password.
+  function get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function set(k, v){ try{ v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); }catch(e){} }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function safeUrl(u){ return /^(https?:\/\/|\/)/i.test(String(u || '')) ? String(u) : ''; }
+  function today(){ var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function day(ymd, opts){ return new Date(ymd.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', opts || {month:'short', day:'numeric'}); }
+  function daysUntil(ymd){ return Math.round((new Date(ymd + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 864e5); }
+  function ago(iso){
+    var s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if(s < 60) return 'just now';
+    if(s < 3600) return Math.floor(s / 60) + 'm ago';
+    if(s < 86400) return Math.floor(s / 3600) + 'h ago';
+    if(s < 7 * 86400) return Math.floor(s / 86400) + 'd ago';
+    return new Date(iso).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  }
+  function money(n){ return typeof n === 'number' ? '$' + n.toLocaleString('en-US') : esc(n); }
+
+  /* ---------- Login ---------- */
+  function showLogin(message){
+    signout.hidden = true;
+    view.innerHTML =
+      '<div><div class="eyebrow">Private</div><h1>Your client pages</h1></div>' +
+      '<form class="login" id="login"><label for="pw">Password</label>' +
+      '<div class="field"><input id="pw" type="password" autocomplete="current-password" required><button class="btn btn-solid" type="submit">Unlock</button></div>' +
+      (message ? '<p class="msg">' + esc(message) + '</p>' : '') + '</form>';
+    document.getElementById('login').addEventListener('submit', function(e){
+      e.preventDefault();
+      var pw = document.getElementById('pw').value;
+      set(KEY, pw); load(pw, true);
+    });
+    document.getElementById('pw').focus();
+  }
+
+  /* ---------- Data ---------- */
+  function load(pw, fromLogin){
+    if(!pw){ showLogin(); return; }
+    fetch('/api/admin', {headers:{Authorization:'Bearer ' + pw}, cache:'no-store'})
+      .then(function(res){
+        if(res.status === 401){ set(KEY, null); showLogin(fromLogin ? 'That password didn’t work.' : ''); return null; }
+        if(res.status === 429){ showLogin('Too many tries. Wait a minute and try again.'); return null; }
+        if(res.status === 503){ showLogin('Almost there: the admin password still needs to be added in Netlify (ADMIN_PASSWORD).'); return null; }
+        if(!res.ok) throw new Error(res.status);
+        return res.json();
+      })
+      .then(function(data){ if(data) render(data); })
+      .catch(function(){ showLogin('Couldn’t load right now. Check your connection and try again.'); });
+  }
+
+  /* ---------- Dashboard ---------- */
+  function render(data){
+    signout.hidden = false;
+    var pages = data.pages || [], reactions = data.reactions || {}, now = today();
+    var byPage = {}; pages.forEach(function(p){ byPage[p.page] = p; });
+    var lastSeen = get(SEEN) || '';
+
+    // Flatten reactions into one feed (skips test pages that aren't real client pages)
+    var feed = [];
+    Object.keys(reactions).forEach(function(pageId){
+      var p = byPage[pageId]; if(!p) return;
+      Object.keys(reactions[pageId]).forEach(function(homeId){
+        var v = reactions[pageId][homeId] || {};
+        var home = (p.listings || []).filter(function(h){ return h.id === homeId; })[0] || {address:'A home no longer on the page'};
+        feed.push({page:p, home:home, r:v.r, note:v.note, at:v.at || ''});
+      });
+    });
+    feed.sort(function(a, b){ return a.at < b.at ? 1 : -1; });
+
+    var counts = {};
+    feed.forEach(function(f){ var c = counts[f.page.page] = counts[f.page.page] || {love:0, pass:0, note:0, last:''};
+      if(f.r === 'love') c.love++; if(f.r === 'pass') c.pass++; if(f.note) c.note++; if(f.at > c.last) c.last = f.at; });
+
+    var active = [], expired = [];
+    pages.forEach(function(p){ (p.expires && now >= p.expires ? expired : active).push(p); });
+    function activity(p){ var c = counts[p.page] || {}; return [c.last || '', p.lastAdded || '', p.created || '', p.date || ''].sort().pop(); }
+    active.sort(function(a, b){ return activity(a) < activity(b) ? 1 : -1; });
+    expired.sort(function(a, b){ return (a.expires || '') < (b.expires || '') ? 1 : -1; });
+    var fresh = feed.filter(function(f){ return lastSeen && f.at > lastSeen; }).length;
+
+    view.innerHTML =
+      '<div class="head-row"><div><div class="eyebrow">Private</div><h1>Your client pages</h1></div>' +
+        '<button class="btn btn-soft" id="refresh" type="button">Refresh</button></div>' +
+
+      '<section class="panel"><div class="panel-head"><h2>Client reactions</h2><span class="count">' +
+        (feed.length ? feed.length + (feed.length === 1 ? ' reaction' : ' reactions') + (fresh ? ' · ' + fresh + ' new' : '') : '') + '</span></div>' +
+        (feed.length ? '<ul class="feed">' + feed.map(function(f){ return feedItem(f, lastSeen); }).join('') + '</ul>'
+                     : '<div class="empty-box">No reactions yet. When a client taps ❤️ or 👎 or leaves a note, it shows up here.</div>') +
+      '</section>' +
+
+      '<section class="panel"><div class="panel-head"><h2>Active client pages</h2><span class="count">' + active.length + '</span></div>' +
+        (active.length ? '<div class="pages">' + active.map(function(p){ return pageCard(p, counts[p.page]); }).join('') + '</div>'
+                       : '<div class="empty-box">No active client pages right now.</div>') +
+      '</section>' +
+
+      (expired.length ? '<details class="expired"><summary>Expired pages (' + expired.length + ')</summary><div class="pages">' +
+        expired.map(function(p){ return pageCard(p, counts[p.page]); }).join('') + '</div></details>' : '');
+
+    set(SEEN, new Date().toISOString());   // everything on screen now counts as seen next time
+    document.getElementById('refresh').addEventListener('click', function(){ load(get(KEY)); });
+  }
+
+  function feedItem(f, lastSeen){
+    var who = f.page.client || 'Client', rx = REACTION[f.r];
+    var what = rx ? rx.icon + ' ' + rx.text(who) : '📝 ' + who + ' left a note';
+    var photo = safeUrl(f.home.photo);
+    var isNew = lastSeen && f.at > lastSeen;
+    return '<li class="rx' + (isNew ? ' is-new' : '') + '">' +
+      (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'ph\'}))">' : '<div class="ph"></div>') +
+      '<div><div class="rx-top"><span class="rx-what">' + esc(what) + '</span>' + (isNew ? '<span class="rx-new">New</span>' : '') +
+        '<span class="rx-when">' + (f.at ? esc(ago(f.at)) : '') + '</span></div>' +
+      '<div class="rx-home">' + esc(f.home.address) + (f.home.price != null ? ' · ' + money(f.home.price) : '') +
+        ' · <a href="' + esc(f.page.path) + '" target="_blank" rel="noopener">' + esc(who) + '’s page</a></div>' +
+      (f.note ? '<p class="rx-note">“' + esc(f.note) + '”</p>' : '') +
+      '</div></li>';
+  }
+
+  function pageCard(p, c){
+    c = c || {love:0, pass:0, note:0};
+    var tour = p.mode === 'tour', n = (p.listings || []).length;
+    var line = tour
+      ? (p.date ? 'Tour ' + day(p.date, {weekday:'short', month:'short', day:'numeric'}) + ' · ' : '') + n + (n === 1 ? ' stop' : ' stops')
+      : n + (n === 1 ? ' home' : ' homes') + (p.created ? ' · sent ' + day(p.created) : '') + (p.lastAdded ? ' · last added ' + day(p.lastAdded) : '');
+    var exp = '';
+    if(p.expires){
+      var left = daysUntil(p.expires);
+      var lastDay = new Date(p.expires + 'T12:00:00'); lastDay.setDate(lastDay.getDate() - 1);   // shuts off at midnight starting `expires`
+      lastDay = lastDay.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+      exp = left <= 0 ? 'Expired ' + day(p.expires)
+          : 'Live through ' + lastDay + ' (' + left + (left === 1 ? ' day' : ' days') + ' left)';
+      exp = '<span class="pg-exp' + (left > 0 && left <= 3 ? ' soon' : '') + '">' + esc(exp) + '</span>';
+    }
+    var link = 'joeibarra.com' + p.path;
+    return '<article class="pg"><div class="pg-top"><span class="pg-name">' + esc(p.client || p.page) + '</span>' +
+      '<span class="pill' + (tour ? ' tour' : '') + '">' + (tour ? 'Tour' : 'Homes') + '</span></div>' +
+      '<span class="pg-line">' + esc(line) + '</span>' + exp +
+      (tour ? '' : '<div class="pg-counts"><span>❤️ ' + c.love + '</span><span>👎 ' + c.pass + '</span><span>📝 ' + c.note + '</span></div>') +
+      '<div class="actions"><a class="btn btn-solid" href="' + esc(p.path) + '" target="_blank" rel="noopener">Open page</a>' +
+        '<button class="btn btn-soft copy" type="button" data-link="' + esc(link) + '">Copy link</button></div></article>';
+  }
+
+  // Copy a client's link (no ".html") to paste into a text
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('.copy'); if(!b) return;
+    var done = function(){ var t = b.textContent; b.textContent = 'Copied!'; setTimeout(function(){ b.textContent = t; }, 1500); };
+    if(navigator.clipboard) navigator.clipboard.writeText(b.dataset.link).then(done, function(){ prompt('Copy this link:', b.dataset.link); });
+    else prompt('Copy this link:', b.dataset.link);
+  });
+  signout.addEventListener('click', function(){ set(KEY, null); showLogin(); });
+
+  load(get(KEY));
+})();
+</script>
+</body>
+</html>

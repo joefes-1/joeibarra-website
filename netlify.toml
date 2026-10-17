@@ -1,0 +1,6 @@
+# Netlify build settings.
+# The site is plain HTML (published from the repo root). The one build step refreshes the
+# private client-page directory used by /admin (see scripts/build-directory.mjs).
+[build]
+  publish = "."
+  command = "node scripts/build-directory.mjs"

@@ -1,0 +1,146 @@
+{
+ "pages": [
+  {
+   "page": "dolce-ibarra-tour",
+   "path": "/homes/dolce-ibarra-tour",
+   "mode": "tour",
+   "client": "Dolce",
+   "title": "Here's the plan for Saturday",
+   "created": "2026-10-16",
+   "date": "2026-10-17",
+   "lastAdded": null,
+   "expires": "2026-10-20",
+   "listings": [
+    {
+     "id": "WS26120396",
+     "address": "20977 E Canyon Ridge Lane",
+     "city": "Diamond Bar, CA 91789",
+     "price": 1250000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/396/WS26120396_0.jpg",
+     "added": null,
+     "time": "10:00"
+    },
+    {
+     "id": "TR26201462",
+     "address": "20774 Timberline Lane",
+     "city": "Diamond Bar, CA 91789",
+     "price": 1239999,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/462/TR26201462_0.jpg",
+     "added": null,
+     "time": "10:35"
+    },
+    {
+     "id": "WS26223791",
+     "address": "21138 Valleyview Drive",
+     "city": "Walnut, CA 91789",
+     "price": 1200000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/791/WS26223791_0.jpg",
+     "added": null,
+     "time": "11:20"
+    },
+    {
+     "id": "CV26223436",
+     "address": "1215 Vassar Lane",
+     "city": "Walnut, CA 91789",
+     "price": 1070000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/436/CV26223436_0.jpg",
+     "added": null,
+     "time": "12:00"
+    }
+   ]
+  },
+  {
+   "page": "dolce-ibarra",
+   "path": "/homes/dolce-ibarra",
+   "mode": "showcase",
+   "client": "Dolce",
+   "title": "A few homes worth a look",
+   "created": "2026-10-16",
+   "date": null,
+   "lastAdded": "2026-10-16T14:20",
+   "expires": "2026-11-15",
+   "listings": [
+    {
+     "id": "TR26201462",
+     "address": "20774 Timberline Lane",
+     "city": "Diamond Bar, CA 91789",
+     "price": 1239999,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/462/TR26201462_0.jpg",
+     "added": "2026-10-16T14:20",
+     "time": null
+    },
+    {
+     "id": "WS26120396",
+     "address": "20977 E Canyon Ridge Lane",
+     "city": "Diamond Bar, CA 91789",
+     "price": 1250000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/396/WS26120396_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "WS26223791",
+     "address": "21138 Valleyview Drive",
+     "city": "Walnut, CA 91789",
+     "price": 1200000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/791/WS26223791_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "CV26223436",
+     "address": "1215 Vassar Lane",
+     "city": "Walnut, CA 91789",
+     "price": 1070000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/436/CV26223436_0.jpg",
+     "added": null,
+     "time": null
+    }
+   ]
+  },
+  {
+   "page": "jake-rounds",
+   "path": "/homes/jake-rounds",
+   "mode": "showcase",
+   "client": "Jake",
+   "title": "A few homes worth a look",
+   "created": "2026-10-16",
+   "date": null,
+   "lastAdded": null,
+   "expires": "2026-11-15",
+   "listings": [
+    {
+     "id": "PW26195399",
+     "address": "7946 E Elderwood Avenue",
+     "city": "Orange, CA 92869",
+     "price": 1595000,
+     "photo": "https://photos.zillowstatic.com/fp/1c17e20effb217d3608db938b31abffa-cc_ft_1536.jpg",
+     "added": null,
+     "time": null
+    }
+   ]
+  },
+  {
+   "page": "saira-molina",
+   "path": "/homes/saira-molina",
+   "mode": "showcase",
+   "client": "Saira",
+   "title": "A few homes worth a look",
+   "created": "2026-10-16",
+   "date": null,
+   "lastAdded": null,
+   "expires": "2026-11-15",
+   "listings": [
+    {
+     "id": "PF26186158",
+     "address": "1025 Sheila Court",
+     "city": "Montebello, CA 90640",
+     "price": 600000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/158/PF26186158_0.jpg",
+     "added": null,
+     "time": null
+    }
+   ]
+  }
+ ]
+}

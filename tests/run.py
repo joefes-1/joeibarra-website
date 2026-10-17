@@ -9,7 +9,7 @@ listing rendered. Then uses the fixtures in tests/fixtures/ to check fresh-pick 
 expiry, the live tour, edge cases and the reactions flow (with /api/reactions faked).
 Nothing here talks to the real site or saves real reactions.
 """
-import asyncio, datetime as dt, functools, glob, http.server, json, os, re, socketserver, sys, threading
+import asyncio, datetime as dt, functools, glob, http.server, json, os, re, socketserver, subprocess, sys, threading
 
 from playwright.async_api import async_playwright
 
@@ -113,7 +113,7 @@ async def fresh_picks(browser, base):
     check(await p.evaluate("document.querySelectorAll('.past-grid .tile').length") == 2, 'originals should be 2 past-pick tiles')
     check(await p.evaluate("document.querySelectorAll('.fresh-pill').length") == 3, 'each fresh pick should have a Fresh pick tag')
     await p.context.close()
-    for when, expired in [((2026, 11, 2, 23, 59), False), ((2026, 11, 3, 0, 1), True)]:   # newest add Oct 20 + 14 days
+    for when, expired in [((2026, 11, 18, 23, 59), False), ((2026, 11, 19, 0, 1), True)]:   # newest add Oct 20 + 30 days
         p = await open_page(browser, base, '/tests/fixtures/fresh.html', dt.datetime(*when))
         check(('this page has expired' in await text(p)) == expired, f'fresh fixture at {when}: expired should be {expired}')
         await p.context.close()
@@ -208,11 +208,102 @@ async def tiles(browser, base):
     await p.context.close()
 
 
+async def directory(browser, base):
+    print('Admin directory: up to date with homes/*.html, expiry dates match the pages')
+    r = subprocess.run(['node', os.path.join(ROOT, 'scripts', 'build-directory.mjs'), '--check'], capture_output=True, text=True)
+    check(r.returncode == 0, 'netlify/data/client-pages.json is out of date: run node scripts/build-directory.mjs')
+    pages = json.load(open(os.path.join(ROOT, 'netlify', 'data', 'client-pages.json')))['pages']
+    files = {os.path.basename(f)[:-5] for f in glob.glob(os.path.join(ROOT, 'homes', '*.html'))
+             if 'sample: true' not in open(f).read()}
+    check({p['path'].split('/')[-1] for p in pages} == files, 'directory should list every non-sample client page')
+    # the page itself must switch off on the directory's expiry date
+    for p in pages:
+        if not p['expires']:
+            continue
+        y, m, d = map(int, p['expires'].split('-'))
+        before = dt.datetime(y, m, d) - dt.timedelta(minutes=1)
+        for when, off in [(before, False), (dt.datetime(y, m, d, 0, 1), True)]:
+            pg = await open_page(browser, base, p['path'] + '.html', when)
+            t = await text(pg)
+            check((('this page has expired' in t) or ('thanks for coming out' in t)) == off,
+                  f"{p['page']} at {when}: directory says expires {p['expires']}, page disagrees")
+            await pg.context.close()
+
+
+ADMIN_DATA = {
+    'pages': [
+        {'page': 'test-fresh', 'path': '/tests/fixtures/fresh', 'mode': 'showcase', 'client': 'Tess', 'created': '2026-10-16',
+         'date': None, 'lastAdded': '2026-10-20T16:40', 'expires': '2026-11-19',
+         'listings': [{'id': 'A1', 'address': '1 Original Ln', 'price': 1000000, 'photo': '/images/willow.jpg'},
+                      {'id': 'B2', 'address': '3 Fresh Ave', 'price': 1200000, 'photo': '/images/el-paso.jpg'}]},
+        {'page': 'test-tour', 'path': '/tests/fixtures/tour', 'mode': 'tour', 'client': 'Tess', 'created': None,
+         'date': '2026-10-17', 'lastAdded': None, 'expires': '2026-10-20', 'listings': [{'id': 'C3', 'address': '1 Stop Rd'}]},
+        {'page': 'test-old', 'path': '/tests/fixtures/edge', 'mode': 'showcase', 'client': 'Old', 'created': '2026-09-01',
+         'date': None, 'lastAdded': None, 'expires': '2026-10-01', 'listings': []},
+    ],
+    'reactions': {
+        'test-fresh': {'A1': {'r': 'love', 'note': 'Love the yard', 'at': '2026-10-21T17:00:00Z'},
+                       'B2': {'r': 'pass', 'note': '', 'at': '2026-10-21T18:30:00Z'}},
+        'zz-live-test': {'X': {'r': 'love', 'note': '', 'at': '2026-10-21T19:00:00Z'}},   # not a client page: must be skipped
+    },
+}
+
+
+async def admin(browser, base):
+    print('Admin page: locked without the password, shows reactions + pages when unlocked')
+    async def page_with(status, body=None, stored=None):
+        ctx = await browser.new_context(viewport={'width': 390, 'height': 844}, has_touch=True, is_mobile=True)
+        if stored:
+            await ctx.add_init_script("localStorage.setItem('joeibarra-admin-key', %s)" % json.dumps(stored))
+        pg = await ctx.new_page()
+        pg.errors = []
+        pg.on('pageerror', lambda e: pg.errors.append(str(e)))
+        seen = []
+        async def handle(route):
+            seen.append(route.request.headers.get('authorization'))
+            await route.fulfill(status=status, content_type='application/json', body=json.dumps(body or {}))
+        await pg.route('**/api/admin', handle)
+        await pg.route(lambda u: not u.startswith(base), lambda r: r.abort())
+        await pg.clock.set_fixed_time(dt.datetime(2026, 10, 22, 9, 0))
+        await pg.goto(base + '/admin.html')
+        await pg.wait_for_timeout(300)
+        pg.seen = seen
+        return pg
+    # no password saved: login form, nothing private on screen
+    pg = await page_with(401)
+    check(await pg.locator('#pw').is_visible(), 'admin should ask for the password first')
+    check('Tess' not in await pg.inner_text('body'), 'admin must not show client data before unlocking')
+    await pg.fill('#pw', 'test-password'); await pg.click('#login button'); await pg.wait_for_timeout(200)
+    check(pg.seen[-1] == 'Bearer test-password', f'admin should send the password as a Bearer token, sent {pg.seen[-1]}')
+    check('didn’t work' in await pg.inner_text('body'), 'wrong password should say so')
+    await pg.context.close()
+    # unlocked
+    pg = await page_with(200, ADMIN_DATA, stored='test-password')
+    body = await pg.inner_text('body')
+    check(not pg.errors, f'admin script errors: {pg.errors}')
+    feed = await pg.evaluate("[...document.querySelectorAll('.rx .rx-what')].map(e=>e.textContent)")
+    check(len(feed) == 2 and 'Not for Tess' in feed[0] and 'Tess loved it' in feed[1], f'feed should be newest first and skip test pages, got {feed}')
+    check('Love the yard' in body, 'notes should show in the feed')
+    names = await pg.evaluate("[...document.querySelectorAll('.panel .pg .pg-name')].map(e=>e.textContent)")
+    check(len(names) == 1, f'only unexpired pages under Active, got {names}')
+    check('Live through Nov 18' in body, 'page card should show its last live day')
+    check(await pg.locator('details.expired').count() == 1, 'expired pages should be tucked into their own section')
+    wide = await pg.evaluate('document.documentElement.scrollWidth - innerWidth')
+    check(wide <= 0, f'admin scrolls sideways on a phone by {wide}px')
+    link = await pg.locator('.copy').first.get_attribute('data-link')
+    check(link and not link.endswith('.html'), f'copied links should not end in .html, got {link}')
+    await pg.context.close()
+    # setup message when the password hasn't been added in Netlify yet
+    pg = await page_with(503, {'error': 'setup'}, stored='x')
+    check('ADMIN_PASSWORD' in await pg.inner_text('body'), 'admin should explain when the password is not set up yet')
+    await pg.context.close()
+
+
 async def main():
     base = serve()
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
-        for suite in (real_pages, fresh_picks, tours, edge_cases, reactions, tiles):
+        for suite in (real_pages, fresh_picks, tours, edge_cases, reactions, tiles, directory, admin):
             await suite(browser, base)
         await browser.close()
     print('\n%d checks passed, %d failed' % (PASSES, len(FAILS)))
