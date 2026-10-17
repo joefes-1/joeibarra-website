@@ -334,28 +334,26 @@ async def admin(browser, base):
     check(wide <= 0, f'admin scrolls sideways on a phone by {wide}px')
     link = await pg.locator('.copy').first.get_attribute('data-link')
     check(link and not link.endswith('.html'), f'copied links should not end in .html, got {link}')
-    # the whole reaction card opens the client's page; Seen does not
-    rx = pg.locator('.panel > .feed .rx').first
-    box = await rx.bounding_box()
-    async with pg.context.expect_page() as opened:
-        await pg.mouse.click(box['x'] + box['width'] * 0.5, box['y'] + box['height'] - 6)
-    new = await opened.value
-    check(new.url.endswith('/tests/fixtures/fresh#h-B2'), f'clicking a reaction card should open that home on the client page, opened {new.url}')
-    await new.close()
-    check(await pg.locator('.rx-home a').count() == 0, 'reaction cards should not have a separate page hyperlink')
-    # the whole card opens the client page; Copy link does not
-    card = pg.locator('.panel .pg').first
-    box = await card.bounding_box()
-    async with pg.context.expect_page() as opened:
-        await pg.mouse.click(box['x'] + box['width'] * 0.7, box['y'] + box['height'] * 0.45)
-    new = await opened.value
-    check(new.url.startswith(base + '/'), f'clicking the card should open the client page, opened {new.url}')
-    await new.close()
     await pg.evaluate("navigator.clipboard && (navigator.clipboard.writeText = () => Promise.resolve())")
-    before = len(pg.context.pages)
+    before = pg.url
     await pg.locator('.panel .pg .copy').first.click(); await pg.wait_for_timeout(300)
-    check(len(pg.context.pages) == before, 'Copy link should not also open the page')
+    check(pg.url == before and len(pg.context.pages) == 1, 'Copy link should not also open the page')
     check(await pg.locator('.panel .pg .btn-solid').count() == 0, 'the separate Open page button should be gone')
+    check(await pg.locator('#view a[target=_blank]').count() == 0, 'admin links should open in the same tab, not a new one')
+    check(await pg.locator('.rx-home a').count() == 0, 'reaction cards should not have a separate page hyperlink')
+    # the whole reaction card opens that home on the client's page, in the same tab
+    box = await pg.locator('.panel > .feed .rx').first.bounding_box()
+    async with pg.expect_navigation():
+        await pg.mouse.click(box['x'] + box['width'] * 0.5, box['y'] + box['height'] - 6)
+    check(pg.url.endswith('/tests/fixtures/fresh#h-B2') and len(pg.context.pages) == 1,
+          f'clicking a reaction card should open that home in the same tab, got {pg.url} ({len(pg.context.pages)} tabs)')
+    await pg.go_back(); await pg.wait_for_timeout(300)
+    # the whole page card opens the client page, in the same tab
+    box = await pg.locator('.panel .pg').first.bounding_box()
+    async with pg.expect_navigation():
+        await pg.mouse.click(box['x'] + box['width'] * 0.7, box['y'] + box['height'] * 0.45)
+    check(pg.url.endswith('/tests/fixtures/fresh') and len(pg.context.pages) == 1,
+          f'clicking a page card should open the client page in the same tab, got {pg.url}')
     await pg.context.close()
     # Remove / Restore
     data = json.loads(json.dumps(ADMIN_DATA))
