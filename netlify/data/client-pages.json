@@ -97,50 +97,6 @@
      "time": null
     }
    ]
-  },
-  {
-   "page": "jake-rounds",
-   "path": "/homes/jake-rounds",
-   "mode": "showcase",
-   "client": "Jake",
-   "title": "A few homes worth a look",
-   "created": "2026-10-16",
-   "date": null,
-   "lastAdded": null,
-   "expires": "2026-11-15",
-   "listings": [
-    {
-     "id": "PW26195399",
-     "address": "7946 E Elderwood Avenue",
-     "city": "Orange, CA 92869",
-     "price": 1595000,
-     "photo": "https://photos.zillowstatic.com/fp/1c17e20effb217d3608db938b31abffa-cc_ft_1536.jpg",
-     "added": null,
-     "time": null
-    }
-   ]
-  },
-  {
-   "page": "saira-molina",
-   "path": "/homes/saira-molina",
-   "mode": "showcase",
-   "client": "Saira",
-   "title": "A few homes worth a look",
-   "created": "2026-10-16",
-   "date": null,
-   "lastAdded": null,
-   "expires": "2026-11-15",
-   "listings": [
-    {
-     "id": "PF26186158",
-     "address": "1025 Sheila Court",
-     "city": "Montebello, CA 90640",
-     "price": 600000,
-     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/158/PF26186158_0.jpg",
-     "added": null,
-     "time": null
-    }
-   ]
   }
  ]
 }
