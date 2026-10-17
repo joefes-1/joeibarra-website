@@ -112,7 +112,28 @@ async def fresh_picks(browser, base):
     check(order == want, f'fresh-pick order wrong:\n    got  {order}\n    want {want}')
     check(await p.evaluate("document.querySelectorAll('.past-grid .tile').length") == 2, 'originals should be 2 past-pick tiles')
     check(await p.evaluate("document.querySelectorAll('.fresh-pill').length") == 3, 'each fresh pick should have a Fresh pick tag')
+    # numbers stay with the house: order sent (1-2 originals, then 3, 4, 5 as added), not display order
+    nums_js = """[...document.querySelectorAll('#app .home:not(.tile-pop .home), #app .tile')].map(e=>
+        (e.querySelector('.addr, .tile-addr').childNodes[0].textContent) + '=' + e.querySelector('.badge b, .tile-num').textContent)"""
+    nums = await p.evaluate(nums_js)
+    check(nums == ['5 Fresh Ave=5', '4 Fresh Ave=4', '3 Fresh Ave=3', '1 Original Ln=1', '2 Original Ln=2'], f'home numbers should not follow display order, got {nums}')
+    badge = await p.evaluate("document.querySelector('.home .badge').textContent")
+    check(badge.endswith('Home 5'), f'showcase badge should read "Home 5" (no "of N"), got {badge}')
     await p.context.close()
+    # a pinned `num` (set after a home is taken off) holds, and later homes count on from it
+    p = await browser.new_page()
+    async def pinned(route):
+        html = open(os.path.join(ROOT, 'tests/fixtures/fresh.html'), encoding='utf-8').read()
+        html = html.replace('"address": "2 Original Ln",', '"address": "2 Original Ln", "num": 7,')
+        await route.fulfill(status=200, content_type='text/html', body=html)
+    await p.route('**/tests/fixtures/fresh.html', pinned)
+    await p.route(lambda u: not u.startswith(base), lambda r: r.abort())
+    await p.route('**/api/**', lambda r: r.fulfill(status=200, content_type='application/json', body='{"reactions":{}}'))
+    await p.clock.set_fixed_time(dt.datetime(2026, 10, 21, 10, 0))
+    await p.goto(base + '/tests/fixtures/fresh.html'); await p.wait_for_timeout(300)
+    nums = await p.evaluate(nums_js)
+    check(nums == ['5 Fresh Ave=10', '4 Fresh Ave=9', '3 Fresh Ave=8', '1 Original Ln=1', '2 Original Ln=7'], f'pinned num should hold, got {nums}')
+    await p.close()
     for when, expired in [((2026, 11, 18, 23, 59), False), ((2026, 11, 19, 0, 1), True)]:   # newest add Oct 20 + 30 days
         p = await open_page(browser, base, '/tests/fixtures/fresh.html', dt.datetime(*when))
         check(('this page has expired' in await text(p)) == expired, f'fresh fixture at {when}: expired should be {expired}')

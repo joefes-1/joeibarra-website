@@ -48,6 +48,17 @@
   function timeLabel(s){ return s.length > 10 ? clock(s.slice(11, 16)) : ''; }
   function homeId(h, i){ return String(h.mls || h.address || ('home-' + (i + 1))).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60); }
   homes.forEach(function(h, i){ h._id = homeId(h, i); });
+  // Each home keeps its number for good, so "#3" means the same house next week:
+  // tours count stops in route order; showcases count in the order homes were sent
+  // (originals in file order, then each fresh batch by its `added` stamp).
+  // A home can pin its number with `num` (used after a home is taken off the page, so the rest don't shift).
+  (function(){
+    if(TOUR){ homes.forEach(function(h, i){ h._num = i + 1; }); return; }
+    var order = homes.map(function(h, i){ return {h:h, i:i}; });
+    order.sort(function(a, b){ var x = a.h.added || '', y = b.h.added || ''; return x === y ? a.i - b.i : (x < y ? -1 : 1); });
+    var n = 0;
+    order.forEach(function(o){ var pin = +o.h.num; n = pin > 0 ? Math.max(n, pin) : n + 1; o.h._num = pin > 0 ? pin : n; });
+  })();
 
   var ICON = {
     pin:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
@@ -144,7 +155,7 @@
     var cls = 'home' + (opts.inPop ? '' : ' reveal') + (fresh ? ' is-fresh' : '');
     return '<article class="' + cls + '"' + (REACT ? ' data-home="' + h._id + '"' : '') + (opts.inPop ? '' : ' id="stop-' + (i + 1) + '"') + '>' +
       '<div class="photo">' + img +
-        '<span class="badge"><b>' + (i + 1) + '</b>' + (TOUR ? 'Stop ' : 'Home ') + (i + 1) + ' of ' + homes.length + '</span>' +
+        '<span class="badge"><b>' + h._num + '</b>' + (TOUR ? 'Stop ' + h._num + ' of ' + homes.length : 'Home ' + h._num) + '</span>' +
         (h.status ? '<span class="status">' + esc(h.status) + '</span>' : '') +
         (REACT ? '<span class="react-badge" hidden></span>' : '') +
       '</div>' +
@@ -169,7 +180,7 @@
     if(h.sqft) bits.push(Number(h.sqft).toLocaleString('en-US') + ' sq ft');
     var photo = safeUrl(h.photo);
     return '<article class="tile reveal"' + (REACT ? ' data-home="' + h._id + '"' : '') + ' tabindex="0" aria-label="' + esc(h.address) + ', ' + money(h.price) + '. Show details">' +
-      '<div class="tile-photo">' + (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy">' : '') + '<span class="tile-num">' + (i + 1) + '</span>' +
+      '<div class="tile-photo">' + (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy">' : '') + '<span class="tile-num">' + h._num + '</span>' +
         (REACT ? '<span class="react-badge" hidden></span>' : '') + '</div>' +
       '<div class="tile-body"><span class="tile-price">' + money(h.price) + '</span><span class="tile-addr">' + esc(h.address) + '</span>' +
         '<span class="tile-specs">' + bits.join(' · ') + '</span><span class="tile-more">See details</span></div>' +
@@ -221,7 +232,7 @@
     var hasFresh = keys.some(Boolean);
     var batchesPerDay = {};
     keys.forEach(function(k){ if(k){ var d = k.slice(0, 10); batchesPerDay[d] = (batchesPerDay[d] || 0) + 1; } });
-    homes = [].concat.apply([], keys.map(function(k){ return byKey[k]; }));   // numbering follows display order
+    homes = [].concat.apply([], keys.map(function(k){ return byKey[k]; }));   // display order (numbers stay fixed, see _num)
 
     var html = '', n = 0;
     keys.forEach(function(k){
