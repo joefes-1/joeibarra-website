@@ -49,7 +49,15 @@
 /* Page directory */
 .pages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 @media (max-width:640px){.pages{grid-template-columns:1fr}}
-.pg{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.pg{position:relative;background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,box-shadow .2s,transform .2s}
+/* The whole card opens the client page: the name link stretches over the card, buttons sit above it */
+.pg-link{color:inherit;text-decoration:none}
+.pg-link::after{content:"";position:absolute;inset:0;border-radius:inherit;z-index:1}
+.pg-link:focus-visible{outline:none}
+.pg:has(.pg-link):hover,.pg:has(.pg-link:focus-visible){border-color:var(--slate);box-shadow:0 6px 18px rgba(31,42,55,.08);transform:translateY(-1px)}
+.pg:has(.pg-link:focus-visible){box-shadow:0 0 0 3px var(--slate-tint)}
+.pg .actions,.pg .remove{position:relative;z-index:2}
+@media (prefers-reduced-motion:reduce){.pg{transition:none}.pg:hover{transform:none!important}}
 .pg-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .pg-name{font-family:var(--serif);font-size:24px;color:var(--ink);line-height:1.1}
 .pill{display:inline-flex;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:var(--slate-tint);color:var(--slate-deep)}
@@ -233,12 +241,11 @@
         '<span class="pg-line">' + esc(line) + '</span><span class="pg-exp">Removed ' + esc(new Date(removedOn).toLocaleDateString('en-US', {month:'short', day:'numeric'})) + '</span>' +
         '<div class="actions"><button class="btn btn-soft page-action" type="button" data-action="restore" data-page="' + esc(p.page) + '" data-who="' + who + '">Restore</button></div></article>';
     }
-    return '<article class="pg"><div class="pg-top"><span class="pg-name">' + esc(p.client || p.page) + '</span>' +
+    return '<article class="pg"><div class="pg-top"><a class="pg-name pg-link" href="' + esc(p.path) + '" target="_blank" rel="noopener">' + esc(p.client || p.page) + '</a>' +
       '<span class="pill' + (tour ? ' tour' : '') + '">' + (tour ? 'Tour' : 'Homes') + '</span></div>' +
       '<span class="pg-line">' + esc(line) + '</span>' + exp +
       (tour ? '' : '<div class="pg-counts"><span>❤️ ' + c.love + '</span><span>👎 ' + c.pass + '</span><span>📝 ' + c.note + '</span></div>') +
-      '<div class="actions"><a class="btn btn-solid" href="' + esc(p.path) + '" target="_blank" rel="noopener">Open page</a>' +
-        '<button class="btn btn-soft copy" type="button" data-link="' + esc(link) + '">Copy link</button></div>' +
+      '<div class="actions"><button class="btn btn-soft copy" type="button" data-link="' + esc(link) + '">Copy link</button></div>' +
       '<button class="remove page-action" type="button" data-action="remove" data-page="' + esc(p.page) + '" data-who="' + who + '">Remove page</button></article>';
   }
 

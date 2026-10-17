@@ -313,6 +313,19 @@ async def admin(browser, base):
     check(wide <= 0, f'admin scrolls sideways on a phone by {wide}px')
     link = await pg.locator('.copy').first.get_attribute('data-link')
     check(link and not link.endswith('.html'), f'copied links should not end in .html, got {link}')
+    # the whole card opens the client page; Copy link does not
+    card = pg.locator('.panel .pg').first
+    box = await card.bounding_box()
+    async with pg.context.expect_page() as opened:
+        await pg.mouse.click(box['x'] + box['width'] * 0.7, box['y'] + box['height'] * 0.45)
+    new = await opened.value
+    check(new.url.startswith(base + '/'), f'clicking the card should open the client page, opened {new.url}')
+    await new.close()
+    await pg.evaluate("navigator.clipboard && (navigator.clipboard.writeText = () => Promise.resolve())")
+    before = len(pg.context.pages)
+    await pg.locator('.panel .pg .copy').first.click(); await pg.wait_for_timeout(300)
+    check(len(pg.context.pages) == before, 'Copy link should not also open the page')
+    check(await pg.locator('.panel .pg .btn-solid').count() == 0, 'the separate Open page button should be gone')
     await pg.context.close()
     # Remove / Restore
     data = json.loads(json.dumps(ADMIN_DATA))
