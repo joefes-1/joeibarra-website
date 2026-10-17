@@ -172,6 +172,11 @@ async def reactions(browser, base):
     await card.locator('.react-btn[data-r=love]').click(); await p.wait_for_timeout(150)      # undo
     saved = api.db.get('test-fresh/' + await card.get_attribute('data-home'), {})
     check(saved.get('r') == '' and 'kitchen' in saved.get('note', ''), f'undoing Love it should keep the note, got {saved}')
+    await card.locator('.react-edit').click(); await p.wait_for_timeout(150)                # note kept, no reaction: Edit still opens the box
+    check(await card.locator('.react-note').is_visible(), 'Edit should open the note box even with no Love it / Not for me selected')
+    await card.locator('.react-note input').fill('Changed my mind'); await card.locator('.react-note input').press('Enter'); await p.wait_for_timeout(150)
+    check('Changed my mind' in await card.locator('.react-said').inner_text() and await card.locator('.react-note').is_hidden(),
+          'saving an edit with no reaction should show the new note and close the box')
     await card.locator('.react-btn[data-r=pass]').click(); await p.wait_for_timeout(150)
     check('grayscale' in await card.locator('.photo img').evaluate('e=>getComputedStyle(e).filter'), 'Not for me should grey out the photo')
     await p.context.close()

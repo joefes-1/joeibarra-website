@@ -299,7 +299,8 @@
         var s = state[box.dataset.home] || {}, editing = box.classList.contains('editing');
         box.querySelectorAll('.react-btn').forEach(function(btn){ btn.setAttribute('aria-pressed', String(btn.dataset.r === s.r)); });
         var form = box.querySelector('.react-note'), input = form.querySelector('input'), said = box.querySelector('.react-said');
-        form.hidden = !s.r || (!!s.note && !editing);           // note box appears once they pick Love it / Not for me
+        // note box: always open while editing; otherwise only after Love it / Not for me, until a note is saved
+        form.hidden = editing ? false : (!s.r || !!s.note);
         if(document.activeElement !== input) input.value = s.note || '';
         said.hidden = !s.note || editing;
         if(s.note) said.innerHTML = '“' + esc(s.note) + '” <span>— ' + esc(D.client || 'You') +
