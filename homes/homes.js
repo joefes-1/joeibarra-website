@@ -32,6 +32,10 @@
   var D = window.HOMES || {};
   var TOUR = D.mode === 'tour';
   var REACT = !TOUR && !D.sample;            // Love it / Not for me buttons on real showcase pages
+  // Joseph's own browser (signed in on /admin) can tap a home's number to pick it for the next buyer tour.
+  // Clients never have this key, so they never see it; saving picks also needs the password on the server.
+  var OWNER_KEY = (function(){ try{ return localStorage.getItem('joeibarra-admin-key') || ''; }catch(e){ return ''; } })();
+  var OWNER = REACT && !!OWNER_KEY;
   var PAGE = String(D.page || location.pathname.replace(/\/+$/, '').split('/').pop().replace(/\.html$/, '')).toLowerCase();
   var root = document.getElementById('app');
   var homes = (D.listings || []).slice();
@@ -422,7 +426,83 @@
       .then(function(d){
         if(d.removedAt && d.removedAt.slice(0, 16) >= latestUpdate()){ renderClosed(true); return; }
         if(REACT) initReactions(d.reactions);
+        if(OWNER) initTourPicks(d.tourPicks || []);
       });
+  }
+
+  /* ---------- Tour picks (Joseph only) ----------
+     Tapping a home's number marks it for the next buyer tour. Picks save to /api/admin (needs his password)
+     and Claude reads them back from /api/reactions when building the tour. */
+  function initTourPicks(saved){
+    var picks = saved.filter(function(id){ return homes.some(function(h){ return h._id === id; }); });
+    var byId = {}; homes.forEach(function(h){ byId[h._id] = h; });
+    var timer = null, status = '';
+    document.documentElement.classList.add('owner');
+    var bar = document.createElement('div');
+    bar.className = 'pick-bar'; bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Tour picks (only you can see this)');
+    document.body.appendChild(bar);
+
+    function sorted(){ return picks.slice().sort(function(a, b){ return byId[a]._num - byId[b]._num; }); }
+    function paint(){
+      document.querySelectorAll('#app [data-home]').forEach(function(el){
+        if(!el.matches('.home, .tile')) return;
+        var on = picks.indexOf(el.dataset.home) > -1;
+        el.classList.toggle('picked', on);
+        var b = el.classList.contains('tile') ? el.querySelector(':scope > .tile-photo .tile-num') : el.querySelector('.badge');
+        if(b){ b.setAttribute('role', 'button'); b.tabIndex = 0; b.setAttribute('aria-pressed', on ? 'true' : 'false');
+               b.setAttribute('aria-label', (on ? 'Remove home ' : 'Add home ') + byId[el.dataset.home]._num + (on ? ' from' : ' to') + ' the tour'); }
+      });
+      var list = sorted();
+      bar.innerHTML = list.length
+        ? '<span class="pick-title">Tour picks</span><span class="pick-list">' + list.map(function(id){ return '#' + byId[id]._num; }).join(' · ') + '</span>' +
+          '<button type="button" class="pick-copy">Copy for Claude</button><button type="button" class="pick-clear">Clear</button>' +
+          (status ? '<span class="pick-status">' + esc(status) + '</span>' : '')
+        : '<span class="pick-hint">Tap a home’s number to pick it for a tour</span>' + (status ? '<span class="pick-status">' + esc(status) + '</span>' : '');
+    }
+    function save(){
+      clearTimeout(timer);
+      timer = setTimeout(function(){
+        fetch('/api/admin', {method:'POST', cache:'no-store',
+          headers:{'Content-Type':'application/json', Authorization:'Bearer ' + OWNER_KEY},
+          body: JSON.stringify({action:'tour-picks', page:PAGE, homes:sorted()})})
+          .then(function(res){
+            status = res.ok ? 'Saved' : res.status === 401 ? 'Sign in on /admin again to save' : 'Didn’t save, try again';
+            paint();
+          })
+          .catch(function(){ status = 'Didn’t save, try again'; paint(); });
+      }, 350);
+    }
+    function toggle(id){
+      var i = picks.indexOf(id);
+      if(i > -1) picks.splice(i, 1); else picks.push(id);
+      status = 'Saving…'; paint(); save();
+    }
+    function copyText(){
+      var name = D.client || PAGE;
+      return 'Tour for ' + name + ' (' + location.host + '/homes/' + PAGE + '):\n' +
+        sorted().map(function(id){ var h = byId[id]; return '#' + h._num + ' ' + fullAddress(h) + (h.mls ? ' (MLS ' + h.mls + ')' : ''); }).join('\n') +
+        '\nDate and start time: ';
+    }
+    // Capture phase, so tapping a number never opens a tile or follows the photo link underneath.
+    document.addEventListener('click', function(e){
+      var b = e.target.closest('#app .badge, #app .tile-num');
+      if(b){
+        var el = b.closest('[data-home]'); if(!el) return;
+        e.preventDefault(); e.stopPropagation(); toggle(el.dataset.home); return;
+      }
+      if(e.target.closest('.pick-clear')){ picks = []; status = 'Saving…'; paint(); save(); }
+      if(e.target.closest('.pick-copy')){
+        var t = copyText(), btn = e.target.closest('.pick-copy');
+        var done = function(){ status = 'Copied, paste it to Claude with the date and time'; paint(); };
+        if(navigator.clipboard) navigator.clipboard.writeText(t).then(done, function(){ prompt('Copy this:', t); });
+        else prompt('Copy this:', t);
+      }
+    }, true);
+    document.addEventListener('keydown', function(e){
+      var b = e.target.closest && e.target.closest('#app .badge, #app .tile-num');
+      if(b && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); e.stopPropagation(); var el = b.closest('[data-home]'); if(el) toggle(el.dataset.home); }
+    }, true);
+    paint();
   }
 
   /* ---------- Past-pick tiles ---------- */

@@ -38,8 +38,8 @@ def serve():
 
 class FakeApi:
     """In-memory stand-in for /api/reactions, same contract as netlify/functions/reactions.mts."""
-    def __init__(self, fail=False, removed_at=None):
-        self.db, self.fail, self.removed_at = {}, fail, removed_at
+    def __init__(self, fail=False, removed_at=None, tour_picks=None):
+        self.db, self.fail, self.removed_at, self.tour_picks = {}, fail, removed_at, tour_picks or []
 
     async def handle(self, route):
         req = route.request
@@ -48,7 +48,7 @@ class FakeApi:
         if req.method == 'GET':
             page = re.search(r'page=([^&]*)', req.url).group(1)
             out = {k.split('/', 1)[1]: v for k, v in self.db.items() if k.startswith(page + '/')}
-            return await route.fulfill(status=200, content_type='application/json', body=json.dumps({'reactions': out, 'removedAt': self.removed_at}))
+            return await route.fulfill(status=200, content_type='application/json', body=json.dumps({'reactions': out, 'removedAt': self.removed_at, 'tourPicks': self.tour_picks}))
         b = json.loads(req.post_data)
         key = b['page'] + '/' + b['home']
         if not b['r'] and not b.get('note'):
@@ -474,11 +474,78 @@ async def deep_link(browser, base):
     await p.context.close()
 
 
+async def tour_picks(browser, base):
+    print('Tour picks: only Joseph (signed in on /admin) can tap numbers; picks save with his password')
+    when = dt.datetime(2026, 10, 21, 10, 0)
+    # a client: numbers do nothing, no bar
+    p = await open_page(browser, base, '/tests/fixtures/fresh.html', when)
+    check(await p.locator('.pick-bar').count() == 0, 'clients should never see the tour-pick bar')
+    check(await p.evaluate("getComputedStyle(document.querySelector('.home .badge')).pointerEvents") == 'none', 'clients cannot click the numbers')
+    await p.context.close()
+
+    async def owner_page(device='desktop', picks=None):
+        opts = {'desktop': dict(viewport={'width': 1280, 'height': 900}),
+                'phone': dict(viewport={'width': 390, 'height': 844}, has_touch=True, is_mobile=True)}[device]
+        ctx = await browser.new_context(**opts)
+        await ctx.add_init_script("localStorage.setItem('joeibarra-admin-key','test-password')")
+        pg = await ctx.new_page(); pg.errors = []; pg.on('pageerror', lambda e: pg.errors.append(str(e)))
+        pg.posts = []
+        async def admin(route):
+            pg.posts.append((route.request.headers.get('authorization'), json.loads(route.request.post_data)))
+            await route.fulfill(status=200, content_type='application/json', body='{"ok":true}')
+        await pg.route('**/api/reactions**', FakeApi(tour_picks=picks).handle)
+        await pg.route('**/api/admin', admin)
+        await pg.route(lambda u: not u.startswith(base), lambda r: r.abort())
+        await pg.clock.set_fixed_time(when)
+        await pg.goto(base + '/tests/fixtures/fresh.html'); await pg.wait_for_timeout(400)
+        return pg
+
+    pg = await owner_page()
+    check(await pg.locator('.pick-bar').count() == 1, 'Joseph should see the tour-pick bar')
+    fresh = pg.locator('#app .home.is-fresh').first
+    fid = await fresh.get_attribute('data-home')
+    await fresh.locator('.badge').click(); await pg.wait_for_timeout(600)
+    check(await fresh.evaluate("e => e.classList.contains('picked')"), 'tapping a number should highlight that home')
+    check(pg.posts and pg.posts[-1] == ('Bearer test-password', {'action': 'tour-picks', 'page': 'test-fresh', 'homes': [fid]}),
+          f'picks should save with the admin password, got {pg.posts}')
+    check(pg.url.endswith('/tests/fixtures/fresh.html') and len(pg.context.pages) == 1, 'tapping the number should not open the listing')
+    tile = pg.locator('.tile').first
+    tid = await tile.get_attribute('data-home')
+    await tile.hover(); await pg.wait_for_timeout(400)            # on a computer the past pick pops open on hover...
+    await tile.locator('.tile-pop .badge').click(); await pg.wait_for_timeout(600)   # ...and its number is right there
+    check(await tile.evaluate("e => e.classList.contains('picked')"), 'past picks should be pickable from their pop-up number')
+    check(pg.url.endswith('/tests/fixtures/fresh.html') and len(pg.context.pages) == 1, 'picking from the pop-up should not open the listing')
+    await pg.mouse.move(5, 5); await pg.evaluate("document.activeElement && document.activeElement.blur()"); await pg.wait_for_timeout(300)
+    bar = await pg.inner_text('.pick-bar')
+    check('#1' in bar and '#5' in bar, f'bar should list picks by home number, got {bar!r}')
+    check(set(pg.posts[-1][1]['homes']) == {fid, tid}, f'both picks should save, got {pg.posts[-1]}')
+    await fresh.locator('.badge').click(); await pg.wait_for_timeout(600)
+    check(pg.posts[-1][1]['homes'] == [tid], f'tapping again should un-pick, got {pg.posts[-1]}')
+    await pg.locator('.pick-clear').click(); await pg.wait_for_timeout(600)
+    check(pg.posts[-1][1]['homes'] == [] and await pg.locator('.picked').count() == 0, 'Clear should drop every pick')
+    check(not pg.errors, f'tour pick script errors: {pg.errors}')
+    await pg.context.close()
+
+    # saved picks load back; phone tap on a tile number picks it without opening the tile
+    pg = await owner_page('phone', picks=['OLD-NOPE'])
+    check(await pg.locator('.picked').count() == 0, 'picks for homes no longer on the page are ignored')
+    await pg.context.close()
+    pg0 = await open_page(browser, base, '/tests/fixtures/fresh.html', when)
+    ids = await pg0.evaluate("[...document.querySelectorAll('.tile')].map(t=>t.dataset.home)")
+    await pg0.context.close()
+    pg = await owner_page('phone', picks=[ids[0]])
+    check(await pg.locator('.tile.picked').count() == 1, 'saved picks should show when the page loads')
+    t2 = pg.locator('.tile').nth(1)
+    await t2.locator(':scope > .tile-photo .tile-num').tap(); await pg.wait_for_timeout(600)
+    check(await t2.evaluate("e => e.classList.contains('picked') && !e.classList.contains('open')"), 'tapping a tile number on a phone should pick it, not open it')
+    await pg.context.close()
+
+
 async def main():
     base = serve()
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
-        for suite in (real_pages, fresh_picks, tours, edge_cases, updates, reactions, tiles, deep_link, removal, directory, admin):
+        for suite in (real_pages, fresh_picks, tours, edge_cases, updates, reactions, tiles, deep_link, tour_picks, removal, directory, admin):
             await suite(browser, base)
         await browser.close()
     print('\n%d checks passed, %d failed' % (PASSES, len(FAILS)))

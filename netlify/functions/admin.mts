@@ -1,6 +1,7 @@
 // Private data for Joseph's /admin page: every client page + every client reaction.
 // GET  /api/admin                          -> { pages, reactions, removed }
 // POST /api/admin { action, page }         -> action "remove" takes a client page offline, "restore" brings it back
+// POST /api/admin { action: "tour-picks", page, homes } -> homes Joseph picked on a client page for the next tour
 // POST /api/admin { action, items }        -> action "hide"/"unhide" a reaction in the feed, items [{ page, home, at }]
 // Both need header "Authorization: Bearer <password>".
 // The password lives only in the Netlify environment variable ADMIN_PASSWORD (Functions scope).
@@ -49,6 +50,15 @@ export default async (req: Request) => {
     }
 
     if (!known(page)) return json({ error: "Unknown page" }, 400)
+
+    // Homes Joseph tapped on a client page to put on the next buyer tour: { homes: [homeId...] }
+    if (action === "tour-picks") {
+      const homes = Array.isArray(body?.homes) ? body.homes.map(String).filter((h: string) => /^[A-Za-z0-9-]{1,60}$/.test(h)).slice(0, 20) : []
+      if (homes.length) await admin.setJSON(`tourpicks/${page}`, { homes, at: new Date().toISOString() })
+      else await admin.delete(`tourpicks/${page}`)
+      return json({ ok: true, homes })
+    }
+
     if (action === "remove") await admin.setJSON(`removed/${page}`, { at: new Date().toISOString() })
     else if (action === "restore") await admin.delete(`removed/${page}`)
     else return json({ error: "Unknown action" }, 400)
