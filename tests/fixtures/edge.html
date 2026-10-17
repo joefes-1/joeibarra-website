@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow"><title>Test fixture</title><link rel="stylesheet" href="/homes/homes.css"></head>
+<body><div id="app"></div>
+<script>
+/* Test fixture for tests/run.py (not a real client page) */
+window.HOMES = {
+  "mode": "showcase",
+  "page": "test-edge",
+  "created": "2026-10-16",
+  "listings": [
+    {
+      "address": "9 No City St",
+      "price": 900000
+    },
+    {
+      "price": "Call for price",
+      "beds": 2
+    },
+    {
+      "address": "10 Good St",
+      "city": "Walnut, CA 91789",
+      "mls": "TST55323",
+      "price": 950000,
+      "status": "For sale",
+      "beds": 3,
+      "baths": 2,
+      "sqft": 1500,
+      "year": 1990,
+      "photo": "javascript:alert(1)",
+      "url": "javascript:alert(1)",
+      "why": "Test write-up for 10 Good St."
+    }
+  ]
+};
+</script>
+<script src="/homes/homes.js"></script>
+</body></html>

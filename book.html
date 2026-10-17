@@ -75,8 +75,7 @@ fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:10px
 legend{padding:0;margin-bottom:10px;font-family:var(--serif);font-size:24px;color:var(--ink);line-height:1.15}
 legend small{display:block;font-family:var(--sans);font-size:13px;color:var(--muted);margin-top:2px}
 .choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.choices.two{grid-template-columns:repeat(3,minmax(0,1fr))}
-@media (max-width:520px){.choices,.choices.two{grid-template-columns:1fr}}
+@media (max-width:520px){.choices{grid-template-columns:1fr}}
 .choice{position:relative}
 .choice input{position:absolute;opacity:0;width:1px;height:1px}
 .choice label{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:84px;padding:12px;border-radius:14px;border:1.5px solid #CFC8BA;background:#fff;cursor:pointer;text-align:center;font-weight:700;font-size:15px;color:var(--ink);transition:border-color .15s,background .15s}
@@ -162,7 +161,7 @@ footer .wrap{display:flex;flex-direction:column;gap:18px;align-items:center;text
 
         <fieldset>
           <legend>Are you looking to buy or sell?</legend>
-          <div class="choices two">
+          <div class="choices">
             <div class="choice">
               <input type="radio" id="role-buyer" name="looking-to" value="Buy" required>
               <label for="role-buyer">Buy</label>
@@ -233,7 +232,7 @@ footer .wrap{display:flex;flex-direction:column;gap:18px;align-items:center;text
 </footer>
 
 <script>
-// Paste the Google Apps Script web app URL here once it's set up
+// Google Apps Script web app that copies each lead into the "Website Leads" sheet
 var GOOGLE_SHEET_URL='https://script.google.com/macros/s/AKfycbyFU6fiptfSZJEEGUeyF4C9amfGEDOd0nw8LeQuKrre3e14Rq-aVmHzUhtQLRDMUX7R/exec';
 (function(){
   var form=document.getElementById('consult-form');

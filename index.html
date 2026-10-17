@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Lato:wght@400;700&display=swap">
 <style>
-/* Layout: split hero (intro + headshot) → full-width slate valuation band with the form → team numbers → recent sales → how I help → contact */
+/* Layout: intro hero → full-width slate valuation band with the form → team numbers → recent sales → how I help → contact */
 :root{
   --paper:#FFFFFF;
   --cream:#F6F1E7;
@@ -63,7 +63,6 @@ p{margin:0}
 
 /* Hero */
 .hero{padding-block:clamp(40px,7vw,88px)}
-.hero .wrap{display:block}
 .intro-id{display:flex;align-items:center;gap:14px}
 .intro-id img{width:64px;height:64px;border-radius:10px;object-fit:cover;flex:none}
 .intro-id div{display:flex;flex-direction:column;gap:2px}
@@ -72,10 +71,6 @@ p{margin:0}
 .hero h1{font-size:clamp(42px,6.2vw,72px)}
 .hero p.lead{font-family:var(--serif);font-size:clamp(20px,2.1vw,23px);line-height:1.45;color:var(--body);max-width:34em}
 .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
-.portrait{position:relative}
-.portrait img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:16px}
-.portrait figcaption{position:absolute;left:16px;bottom:16px;background:#fff;border-radius:12px;padding:10px 14px;font-size:13px;line-height:1.35;color:var(--body);box-shadow:0 6px 20px rgba(31,31,31,.12)}
-.portrait figcaption strong{display:block;font-family:var(--serif);font-weight:500;font-size:18px;color:var(--ink)}
 
 /* Valuation band */
 .value{background:var(--slate);color:#fff;padding-block:clamp(48px,7vw,84px);scroll-margin-top:72px}
@@ -90,6 +85,7 @@ p{margin:0}
 .steps span strong{color:#fff;display:block}
 .form-card{background:#fff;color:var(--body);border-radius:20px;padding:clamp(22px,3.5vw,34px);display:flex;flex-direction:column;gap:16px;min-width:0}
 .form-card h3{font-size:28px}
+.form-stack{display:flex;flex-direction:column;gap:16px}
 .field{display:flex;flex-direction:column;gap:6px}
 .field label{font-size:13px;font-weight:700;color:var(--ink)}
 .field label .opt{font-weight:400;color:var(--muted)}
@@ -245,7 +241,7 @@ footer .wrap{display:flex;flex-direction:column;gap:18px;align-items:center;text
       </div>
 
       <div class="form-card">
-        <form id="valuation-form" name="home-value" method="POST" data-netlify="true" netlify-honeypot="company" style="display:flex;flex-direction:column;gap:16px">
+        <form id="valuation-form" name="home-value" method="POST" data-netlify="true" netlify-honeypot="company" class="form-stack">
           <input type="hidden" name="form-name" value="home-value">
           <p class="hp"><label for="company">Leave this empty</label><input id="company" name="company" tabindex="-1" autocomplete="off"></p>
           <h3>Get your home value</h3>
@@ -436,7 +432,7 @@ footer .wrap{display:flex;flex-direction:column;gap:18px;align-items:center;text
   els.forEach(function(el){io.observe(el)});
 })();
 
-// Paste the Google Apps Script web app URL here once it's set up
+// Google Apps Script web app that copies each lead into the "Website Leads" sheet
 var GOOGLE_SHEET_URL='https://script.google.com/macros/s/AKfycbyFU6fiptfSZJEEGUeyF4C9amfGEDOd0nw8LeQuKrre3e14Rq-aVmHzUhtQLRDMUX7R/exec';
 (function(){
   var form=document.getElementById('valuation-form');

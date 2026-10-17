@@ -4,3 +4,4 @@
 /netlify/*      /   404!
 /package.json   /   404!
 /package-lock.json   /   404!
+/tests/*        /   404!
