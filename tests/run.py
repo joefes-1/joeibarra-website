@@ -145,6 +145,9 @@ async def tours(browser, base):
     p = await open_page(browser, base, '/tests/fixtures/tour.html', dt.datetime(2026, 10, 17, 10, 40))
     states = await p.evaluate("[...document.querySelectorAll('.home')].map(e=>e.classList.contains('now')?'now':e.classList.contains('done')?'done':'-')")
     check(states == ['done', 'now', '-'], f'tour at 10:40 should be done/now/-, got {states}')
+    links = await p.evaluate("[...document.querySelectorAll('.home')].map(e=>{ const a=e.querySelector('.photo-link'); return a ? a.getAttribute('href') : null })")
+    urls = await p.evaluate("window.HOMES.listings.map(h=>h.photo && h.url ? h.url : null)")
+    check(links == urls and any(links), f'tour photos should link to the full listing, got {links}')
     await p.context.close()
     for when, ended in [((2026, 10, 19, 23, 59), False), ((2026, 10, 20, 0, 1), True)]:
         p = await open_page(browser, base, '/tests/fixtures/tour.html', dt.datetime(*when))

@@ -184,7 +184,7 @@
     opts = opts || {};
     var url = safeUrl(h.url), photo = safeUrl(h.photo), fresh = !TOUR && !!h.added;
     var img = photo ? '<img src="' + esc(photo) + '" alt="' + esc(h.address) + '"' + (i > 0 ? ' loading="lazy"' : '') + '>' : '';
-    if(img && !TOUR && url){   // showcase: the whole photo opens the full listing (Joseph's RealScout, or Zillow)
+    if(img && url){   // the whole photo opens the full listing (Joseph's RealScout, or Zillow), on showcases and tours
       var hint = /zillow\.com/i.test(url) ? 'View on Zillow' : 'See full listing';
       img = '<a class="photo-link" href="' + esc(url) + '" target="_blank" rel="noopener" aria-label="' + hint + ': ' + esc(h.address) + '">' + img +
             '<span class="photo-hint">' + hint + ' ' + ICON.out + '</span></a>';
