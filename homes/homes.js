@@ -190,7 +190,7 @@
             '<span class="photo-hint">' + hint + ' ' + ICON.out + '</span></a>';
     }
     var acts = (TOUR ? '' : mapButtons(fullAddress(h))) +
-      (url ? '<a class="btn btn-soft" href="' + esc(url) + '" target="_blank" rel="noopener">Full listing ' + ICON.out + '</a>' : '') +
+      (url && !photo ? '<a class="btn btn-soft" href="' + esc(url) + '" target="_blank" rel="noopener">Full listing ' + ICON.out + '</a>' : '') +   // only when there's no photo to tap
       '<a class="btn btn-soft" href="' + sms(h) + '">' + ICON.msg + 'Text me about it</a>';
     var kind = statusKind(h);
     var cls = 'home' + (opts.inPop ? '' : ' reveal') + (fresh ? ' is-fresh' : '') + (kind ? ' is-' + kind : '');

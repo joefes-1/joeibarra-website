@@ -148,6 +148,8 @@ async def tours(browser, base):
     links = await p.evaluate("[...document.querySelectorAll('.home')].map(e=>{ const a=e.querySelector('.photo-link'); return a ? a.getAttribute('href') : null })")
     urls = await p.evaluate("window.HOMES.listings.map(h=>h.photo && h.url ? h.url : null)")
     check(links == urls and any(links), f'tour photos should link to the full listing, got {links}')
+    dup = await p.evaluate("[...document.querySelectorAll('.home')].filter(e=>e.querySelector('.photo-link') && [...e.querySelectorAll('.actions a')].some(a=>/full listing/i.test(a.textContent))).length")
+    check(dup == 0, f'a card whose photo links to the listing should not also have a Full listing button ({dup} do)')
     await p.context.close()
     for when, ended in [((2026, 10, 19, 23, 59), False), ((2026, 10, 20, 0, 1), True)]:
         p = await open_page(browser, base, '/tests/fixtures/tour.html', dt.datetime(*when))
