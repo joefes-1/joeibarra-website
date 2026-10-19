@@ -426,13 +426,22 @@
       .then(function(d){
         if(d.removedAt && d.removedAt.slice(0, 16) >= latestUpdate()){ renderClosed(true); return; }
         if(REACT) initReactions(d.reactions);
-        if(OWNER) initTourPicks(d.tourPicks || []);
+        if(OWNER) verifyOwner(function(){ initTourPicks(d.tourPicks || []); });
       });
   }
 
   /* ---------- Tour picks (Joseph only) ----------
      Tapping a home's number marks it for the next buyer tour. Picks save to /api/admin (needs his password)
      and Claude reads them back from /api/reactions when building the tour. */
+  // Only unlock tour picks after the server confirms the saved password; a client (or anyone
+  // poking at localStorage) gets a 401 and never sees the feature.
+  function verifyOwner(then){
+    fetch('/api/admin', {method:'POST', cache:'no-store',
+      headers:{'Content-Type':'application/json', Authorization:'Bearer ' + OWNER_KEY},
+      body: JSON.stringify({action:'check'})})
+      .then(function(res){ if(res.ok) then(); })
+      .catch(function(){});
+  }
   function initTourPicks(saved){
     var picks = saved.filter(function(id){ return homes.some(function(h){ return h._id === id; }); });
     var byId = {}; homes.forEach(function(h){ byId[h._id] = h; });
@@ -453,11 +462,12 @@
                b.setAttribute('aria-label', (on ? 'Remove home ' : 'Add home ') + byId[el.dataset.home]._num + (on ? ' from' : ' to') + ' the tour'); }
       });
       var list = sorted();
+      bar.hidden = !list.length;                     // nothing picked: no bar at all
       bar.innerHTML = list.length
         ? '<span class="pick-title">Tour picks</span><span class="pick-list">' + list.map(function(id){ return '#' + byId[id]._num; }).join(' · ') + '</span>' +
           '<button type="button" class="pick-copy">Copy for Claude</button><button type="button" class="pick-clear">Clear</button>' +
           (status ? '<span class="pick-status">' + esc(status) + '</span>' : '')
-        : '<span class="pick-hint">Tap a home’s number to pick it for a tour</span>' + (status ? '<span class="pick-status">' + esc(status) + '</span>' : '');
+        : '';
     }
     function save(){
       clearTimeout(timer);

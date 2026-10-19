@@ -483,7 +483,7 @@ async def tour_picks(browser, base):
     check(await p.evaluate("getComputedStyle(document.querySelector('.home .badge')).pointerEvents") == 'none', 'clients cannot click the numbers')
     await p.context.close()
 
-    async def owner_page(device='desktop', picks=None):
+    async def owner_page(device='desktop', picks=None, password_ok=True):
         opts = {'desktop': dict(viewport={'width': 1280, 'height': 900}),
                 'phone': dict(viewport={'width': 390, 'height': 844}, has_touch=True, is_mobile=True)}[device]
         ctx = await browser.new_context(**opts)
@@ -491,7 +491,10 @@ async def tour_picks(browser, base):
         pg = await ctx.new_page(); pg.errors = []; pg.on('pageerror', lambda e: pg.errors.append(str(e)))
         pg.posts = []
         async def admin(route):
-            pg.posts.append((route.request.headers.get('authorization'), json.loads(route.request.post_data)))
+            body = json.loads(route.request.post_data)
+            if not password_ok: return await route.fulfill(status=401, content_type='application/json', body='{"error":"locked"}')
+            if body.get('action') == 'check': return await route.fulfill(status=200, content_type='application/json', body='{"ok":true}')
+            pg.posts.append((route.request.headers.get('authorization'), body))
             await route.fulfill(status=200, content_type='application/json', body='{"ok":true}')
         await pg.route('**/api/reactions**', FakeApi(tour_picks=picks).handle)
         await pg.route('**/api/admin', admin)
@@ -500,8 +503,16 @@ async def tour_picks(browser, base):
         await pg.goto(base + '/tests/fixtures/fresh.html'); await pg.wait_for_timeout(400)
         return pg
 
+    # someone with a fake/old password saved in their browser: the server says no, so nothing unlocks
+    pg = await owner_page(password_ok=False)
+    check(not await pg.evaluate("document.documentElement.classList.contains('owner')"), 'a wrong saved password must not unlock tour picks')
+    await pg.locator('#app .home .badge').first.click(force=True); await pg.wait_for_timeout(300)
+    check(await pg.locator('.picked').count() == 0 and await pg.locator('.pick-bar').count() == 0, 'without the real password, tapping a number does nothing')
+    await pg.context.close()
+
     pg = await owner_page()
-    check(await pg.locator('.pick-bar').count() == 1, 'Joseph should see the tour-pick bar')
+    check(await pg.evaluate("document.documentElement.classList.contains('owner')"), 'Joseph (password confirmed) gets tour picks')
+    check(await pg.locator('.pick-bar').is_hidden(), 'no bar or hint until something is picked')
     fresh = pg.locator('#app .home.is-fresh').first
     fid = await fresh.get_attribute('data-home')
     await fresh.locator('.badge').click(); await pg.wait_for_timeout(600)
@@ -523,6 +534,7 @@ async def tour_picks(browser, base):
     check(pg.posts[-1][1]['homes'] == [tid], f'tapping again should un-pick, got {pg.posts[-1]}')
     await pg.locator('.pick-clear').click(); await pg.wait_for_timeout(600)
     check(pg.posts[-1][1]['homes'] == [] and await pg.locator('.picked').count() == 0, 'Clear should drop every pick')
+    check(await pg.locator('.pick-bar').is_hidden(), 'the bar should go away once nothing is picked')
     check(not pg.errors, f'tour pick script errors: {pg.errors}')
     await pg.context.close()
 

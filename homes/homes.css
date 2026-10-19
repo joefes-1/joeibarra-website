@@ -253,12 +253,11 @@ footer .wrap{display:flex;flex-direction:column;align-items:center;gap:14px;text
 .picked .badge b,.tile.picked .tile-num{background:#E0A526;color:#1F1F1F}
 .home.picked{box-shadow:0 0 0 3px #E0A526,0 10px 28px rgba(31,31,31,.08)}
 .tile.picked{box-shadow:0 0 0 3px #E0A526}
-.owner body{padding-bottom:84px}
+.owner body:has(.pick-bar:not([hidden])){padding-bottom:84px}
 .pick-bar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:90;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;
   max-width:calc(100vw - 32px);background:#1F2A37;color:#fff;border-radius:16px;padding:10px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:14px}
 .pick-title{font-weight:700;color:#F2C14E;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
 .pick-list{font-weight:700}
-.pick-hint{color:#D5DCE4}
 .pick-bar button{background:#fff;color:#1F2A37;border:0;border-radius:999px;padding:6px 12px;font:700 13px var(--sans);cursor:pointer}
 .pick-bar .pick-clear{background:transparent;color:#D5DCE4;text-decoration:underline;text-underline-offset:3px;padding:6px 4px}
 .pick-status{font-size:12.5px;color:#B9C3CE}

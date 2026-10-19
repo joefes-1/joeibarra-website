@@ -1,6 +1,7 @@
 // Private data for Joseph's /admin page: every client page + every client reaction.
 // GET  /api/admin                          -> { pages, reactions, removed }
 // POST /api/admin { action, page }         -> action "remove" takes a client page offline, "restore" brings it back
+// POST /api/admin { action: "check" }               -> 200 if the password is right (client pages use it to unlock tour picks)
 // POST /api/admin { action: "tour-picks", page, homes } -> homes Joseph picked on a client page for the next tour
 // POST /api/admin { action, items }        -> action "hide"/"unhide" a reaction in the feed, items [{ page, home, at }]
 // Both need header "Authorization: Bearer <password>".
@@ -33,6 +34,8 @@ export default async (req: Request) => {
     let body: any
     try { body = await req.json() } catch { return json({ error: "Bad JSON" }, 400) }
     const page = String(body?.page || ""), action = String(body?.action || "")
+    // Client pages ask this before turning on Joseph-only tools (tour picks): 200 only with the right password.
+    if (action === "check") return json({ ok: true })
     const known = (p: string) => directory.pages.some((d) => d.page === p)
 
     // Hide / unhide reactions in the feed: items [{ page, home, at }]. A hidden reaction comes back
