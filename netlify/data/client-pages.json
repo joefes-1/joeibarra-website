@@ -103,7 +103,7 @@
    "path": "/homes/gaganjyot-arora",
    "mode": "showcase",
    "client": "Gaganjyot",
-   "title": "A home worth a look",
+   "title": "A couple homes worth a look",
    "created": "2026-10-19",
    "date": null,
    "lastAdded": null,
@@ -115,6 +115,15 @@
      "city": "Newport Beach, CA 92660",
      "price": 2850000,
      "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/321/NP26022321_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "OC26208318",
+     "address": "33 Coppercrest",
+     "city": "Aliso Viejo, CA 92656",
+     "price": 1688000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/318/OC26208318_0.jpg",
      "added": null,
      "time": null
     }
