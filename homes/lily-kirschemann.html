@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Homes for Lily · Joseph Ibarra</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#3F5266">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Lato:wght@400;700&display=swap">
+<link rel="stylesheet" href="/homes/homes.css">
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ---- Edit this block for each client ----
+   Lily's saved homes (Zillow, via Follow Up Boss). Listing data checked against MLS #s on Redfin, Oct 21, 2026 */
+window.HOMES = {
+  mode: "showcase",
+  page: "lily-kirschemann",        // fixed id for saved reactions
+  client: "Lily",
+  created: "2026-10-21",   // page expires 30 days after this date (or the newest added)
+  title: "The homes you've saved",
+  area: "Tustin & Anaheim",
+  whyLabel: "What stands out",
+  note: "Hey Lily! I put the homes you've been saving all in one spot so they're easy to compare. Tap a photo for the full listing, and let me know which ones you love. Happy to set up times to see any of them.",
+  listings: [
+    {
+      address: "14647 Red Hill Ave", city: "Tustin, CA 92780", mls: "26915837",
+      price: 719900, status: "For sale",
+      beds: 3, baths: 2.5, sqft: 1232, lot: "1,656 sq ft", year: 1964, hoa: "$390/mo",
+      photo: "https://ssl.cdn-redfin.com/photo/40/bigphoto/837/26915837_0.jpg",
+      url: "https://josephibarra.realscout.com/homesearch/listings/p-14647-red-hill-avenue-tustin-92780-crmlsvow-408",
+      why: "Two-story townhome that's been upgraded top to bottom: kitchen, all the bathrooms, flooring, A/C, windows and the electrical panel. All 3 bedrooms are upstairs, and there's a private enclosed patio that's great for BBQs.",
+      headsUp: "The 2-car garage is detached (with a nice epoxy floor). Community has a pool, clubhouse, playground and sport court. It's been on the market about 7 weeks."
+    },
+    {
+      address: "199 N Magnolia Ave, Unit D", city: "Anaheim, CA 92801", mls: "PW26212920",
+      price: 695000, status: "For sale",
+      beds: 3, baths: 2.5, sqft: 1222, lot: "Condo", year: 1981, hoa: "$370/mo",
+      photo: "https://ssl.cdn-redfin.com/photo/45/bigphoto/920/PW26212920_0.jpg",
+      url: "https://josephibarra.realscout.com/homesearch/listings/p-199-n-magnolia-avenue-d-anaheim-92801-crmlsvow-466",
+      why: "Tucked in the back of a quiet Cape Cod-style community with pool views. Remodeled kitchen with quartz counters and stainless appliances, and the primary suite has a walk-in closet and a double vanity.",
+      headsUp: "Direct-access 2-car garage with laundry and a water softener. Small front patio with low-maintenance turf rather than a full yard. The complex is FHA and VA approved.",
+      openHouses: [{ date: "2026-10-24", start: "14:00", end: "16:00" }]
+    },
+    {
+      address: "941 S Firwood", city: "Anaheim, CA 92806", mls: "OC26187191",
+      price: 728888, status: "Back on market",
+      beds: 3, baths: 2.5, sqft: 1799, lot: "2,180 sq ft", year: 1973, hoa: "$430/mo",
+      photo: "https://ssl.cdn-redfin.com/photo/45/bigphoto/191/OC26187191_0.jpg",
+      url: "https://josephibarra.realscout.com/homesearch/listings/p-941-s-firwood-anaheim-92806-crmlsvow-128",
+      why: "The most space of the bunch at almost 1,800 sq ft, and it's been renovated. There's a partly covered patio with decking that's perfect for eating outside or a little garden, and it's across the street from Boysen Park.",
+      headsUp: "Back on the market, and the listing says it was no fault of the sellers. The HOA covers the grounds and the roof, plus a pool and spa. 2-car garage with storage and a workbench."
+    },
+    {
+      address: "931 S Sutter Creek Rd", city: "Anaheim, CA 92804", mls: "PW26117106",
+      price: 388800, status: "For sale",
+      beds: 2, baths: 1, sqft: 924, lot: "Condo", year: 1980, hoa: "$422/mo",
+      photo: "https://ssl.cdn-redfin.com/photo/45/bigphoto/106/PW26117106_0.jpg",
+      url: "https://josephibarra.realscout.com/homesearch/listings/p-931-s-sutter-creek-anaheim-92804-crmlsvow-202",
+      why: "A much lower price point than the others. Cathedral ceilings in the living area, a big private rooftop deck (about 235 sq ft), and an attached 2-car garage. The complex has a pool and heated spa.",
+      headsUp: "It's smaller than the others at 2 bedrooms and 1 bath, so it's a different kind of option. Washer and dryer aren't included."
+    }
+  ]
+};
+</script>
+<script src="/homes/homes.js"></script>
+</body>
+</html>

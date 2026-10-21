@@ -128,6 +128,55 @@
      "time": null
     }
    ]
+  },
+  {
+   "page": "lily-kirschemann",
+   "path": "/homes/lily-kirschemann",
+   "mode": "showcase",
+   "client": "Lily",
+   "title": "The homes you've saved",
+   "created": "2026-10-21",
+   "date": null,
+   "lastAdded": null,
+   "expires": "2026-11-20",
+   "listings": [
+    {
+     "id": "26915837",
+     "address": "14647 Red Hill Ave",
+     "city": "Tustin, CA 92780",
+     "price": 719900,
+     "photo": "https://ssl.cdn-redfin.com/photo/40/bigphoto/837/26915837_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "PW26212920",
+     "address": "199 N Magnolia Ave, Unit D",
+     "city": "Anaheim, CA 92801",
+     "price": 695000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/920/PW26212920_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "OC26187191",
+     "address": "941 S Firwood",
+     "city": "Anaheim, CA 92806",
+     "price": 728888,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/191/OC26187191_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "PW26117106",
+     "address": "931 S Sutter Creek Rd",
+     "city": "Anaheim, CA 92804",
+     "price": 388800,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/106/PW26117106_0.jpg",
+     "added": null,
+     "time": null
+    }
+   ]
   }
  ]
 }
