@@ -435,6 +435,11 @@ async def admin(browser, base):
     check('stage=Active+Client' in lead_calls[-1] or 'stage=Active%20Client' in lead_calls[-1], f'stage filter goes to the server, got {lead_calls[-1]}')
     await pg.select_option('#lf-created', '7'); await pg.select_option('#lf-activity', '1'); await pg.select_option('#lf-source', 'Zillow'); await pg.wait_for_timeout(300)
     check('createdDays=7' in lead_calls[-1] and 'activityDays=1' in lead_calls[-1] and 'source=Zillow' in lead_calls[-1], f'date/activity/source filters go to the server, got {lead_calls[-1]}')
+    # typing a name then leaving the box must not draw the results twice
+    await pg.fill('#lf-q', 'Tess'); await pg.locator('#lf-q').press('Tab'); await pg.wait_for_timeout(700)
+    names = await pg.evaluate("[...document.querySelectorAll('.lead .lead-name')].map(e=>e.textContent)")
+    check(len(names) == len(set(names)), f'searching a name should not list anyone twice, got {names}')
+    await pg.fill('#lf-q', ''); await pg.wait_for_timeout(700)
     await pg.click('#leads-more'); await pg.wait_for_timeout(300)
     check('cursor=7' in lead_calls[-1], 'Load more passes the cursor')
     await pg.locator('.lead-make').first.click(); await pg.wait_for_timeout(300)
