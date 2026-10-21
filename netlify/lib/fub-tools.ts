@@ -78,6 +78,10 @@ export function pacificIso(d: Date) {
   return `${local.getUTCFullYear()}-${pad(local.getUTCMonth() + 1)}-${pad(local.getUTCDate())}T${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}:00${sign}${pad(Math.floor(a / 60))}:${pad(a % 60)}`
 }
 const pacificDay = (d: Date) => pacificIso(d).slice(0, 10)
+// FUB ignores a "-07:00" offset and reads the wall time as UTC, so always send it plain UTC
+const fubUtc = (d: Date) => d.toISOString().replace(/\.\d{3}Z$/, "Z")
+// FUB times come back as UTC ("...Z"); show them in Pacific
+const fromFub = (v: any) => { if (!v) return v; const d = new Date(v); return isNaN(+d) ? v : pacificIso(d) }
 
 function slimPerson(p: any) {
   if (!p) return p
@@ -140,8 +144,8 @@ export const TOOLS: Tool[] = [
         calls: (calls?.calls || []).map((c: any) => ({ created: c.created, incoming: c.isIncoming, duration: c.duration, outcome: c.outcome, note: c.note })),
         texts: (texts?.textmessages || texts?.textMessages || []).map((t: any) => ({ created: t.created, incoming: t.isIncoming, message: t.message })),
         events: (events?.events || []).map((e: any) => ({ created: e.created, type: e.type, message: e.message, property: slimProperty(e.property) })),
-        openTasks: (tasks?.tasks || []).map((t: any) => ({ id: t.id, name: t.name, type: t.type, due: t.dueDateTime || t.dueDate })),
-        appointments: (appts?.appointments || []).map((x: any) => ({ id: x.id, title: x.title, start: x.start, end: x.end, location: x.location })),
+        openTasks: (tasks?.tasks || []).map((t: any) => ({ id: t.id, name: t.name, type: t.type, due: t.dueDateTime ? fromFub(t.dueDateTime) : t.dueDate })),
+        appointments: (appts?.appointments || []).map((x: any) => ({ id: x.id, title: x.title, start: fromFub(x.start), end: fromFub(x.end), location: x.location })),
       }
     },
   },
@@ -185,7 +189,7 @@ export const TOOLS: Tool[] = [
     run: async (a) => {
       const u = await me()
       const d = await fub("/tasks", { query: { assignedUserId: u.id, isCompleted: false, due: a.due, personId: a.personId, limit: clampLimit(a.limit, 25) } })
-      return { tasks: (d?.tasks || []).map((t: any) => ({ id: t.id, personId: t.personId, name: t.name, type: t.type, due: t.dueDateTime || t.dueDate })) }
+      return { tasks: (d?.tasks || []).map((t: any) => ({ id: t.id, personId: t.personId, name: t.name, type: t.type, due: t.dueDateTime ? fromFub(t.dueDateTime) : t.dueDate })) }
     },
   },
   {
@@ -196,7 +200,7 @@ export const TOOLS: Tool[] = [
       const start = a.start ? parseWhen(a.start, "start") : parseWhen(pacificDay(new Date()), "start")
       const end = a.end ? parseWhen(a.end + (String(a.end).length === 10 ? "T23:59" : ""), "end") : new Date(+start + 8 * 86400000 - 60000)
       const d = await fub("/appointments", { query: { start: start.toISOString(), end: end.toISOString(), personId: a.personId, limit: 100 } })
-      return { appointments: (d?.appointments || []).map((x: any) => ({ id: x.id, title: x.title, start: x.start, end: x.end, location: x.location, type: x.type, invitees: (x.invitees || []).map((i: any) => i.name) })) }
+      return { appointments: (d?.appointments || []).map((x: any) => ({ id: x.id, title: x.title, start: fromFub(x.start), end: fromFub(x.end), location: x.location, type: x.type, invitees: (x.invitees || []).map((i: any) => i.name) })) }
     },
   },
   {
@@ -230,7 +234,7 @@ export const TOOLS: Tool[] = [
         return { personId: id, name: person?.name || "", email: person?.emails?.[0]?.value }
       }))
       const x = await fub("/appointments", { method: "POST", query: { sendInvitation: false }, body: {
-        title, start: pacificIso(start), end: pacificIso(end), allDay: false,
+        title, start: fubUtc(start), end: fubUtc(end), allDay: false,
         location: a.location || undefined, description: a.description || undefined,
         invitees: [{ userId: u.id, name: u.name }, ...people],
       } })
@@ -250,7 +254,7 @@ export const TOOLS: Tool[] = [
       const name = String(a.name || "").trim(); if (!name) throw new ToolError("name can't be empty")
       const u = await me()
       const due = String(a.due || "").trim()
-      const when = /^\d{4}-\d\d-\d\d$/.test(due) ? { dueDate: due } : { dueDateTime: pacificIso(parseWhen(due, "due")) }
+      const when = /^\d{4}-\d\d-\d\d$/.test(due) ? { dueDate: due } : { dueDateTime: fubUtc(parseWhen(due, "due")) }
       const t = await fub("/tasks", { method: "POST", body: { personId, name, type: a.type || "Follow Up", assignedUserId: u.id, ...when } })
       return { created: true, taskId: t?.id, personId, name, ...when }
     },
