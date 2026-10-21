@@ -15,6 +15,7 @@
                   photo, url (RealScout listing link; Zillow as a fallback), why, headsUp,
                   added: "2026-10-18T14:20",   // showcase: added after the link went out -> Fresh pick
                   openHouses: [{ date: "2026-10-18", start: "13:00", end: "16:00" }],  // past ones hide themselves
+                  saved: true,                                  // the client saved it (vs. Joseph shared it) -> "You saved" filter
                   was: 1290000, priceChanged: "2026-10-12",   // previous price -> "Price drop" / "Price up" tag
                   status: "Pending" | "Sold" | ...             // pending/sold/off market get flagged on the card and tile
                   time: "10:35", drive: "..."  // tour: arrival time + drive note
@@ -229,13 +230,13 @@
     // Sold / off market: stays on the page (numbers don't shift) but greyed out, with no card, reactions or links.
     var gone = kind === 'sold' || kind === 'off';
     return '<article class="tile reveal' + (h.added ? ' is-fresh' : '') + (kind ? ' is-' + kind : '') + (gone ? ' is-unavailable' : '') + '"' +
-      (REACT && !gone ? ' data-home="' + h._id + '"' : '') +
+      (REACT && !gone ? ' data-home="' + h._id + '"' : '') + ' data-origin="' + (h.saved ? 'saved' : 'shared') + '"' +
       (gone ? ' aria-disabled="true" aria-label="' + esc(h.address) + ', ' + esc(h.status) + '. No longer available">'
             : ' tabindex="0" aria-label="' + esc(h.address) + ', ' + money(h.price) + '. Show details">') +
       '<div class="tile-photo">' + (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy">' : '') + '<span class="tile-num">' + h._num + '</span>' +
         (kind ? '<span class="tile-status ' + kind + '">' + esc(h.status) + '</span>' : '') +
         (REACT && !gone ? '<span class="react-badge" hidden></span>' : '') + '</div>' +
-      '<div class="tile-body">' + (h.added ? '<span class="tile-fresh">Fresh pick</span>' : '') + '<span class="tile-price">' + money(h.price) + (drop ? '<span class="tile-drop">Price drop</span>' : '') + '</span><span class="tile-addr">' + esc(h.address) + '</span>' +
+      '<div class="tile-body">' + (h.added ? '<span class="tile-fresh">Fresh pick</span>' : '') + (h.saved && hasBoth() ? '<span class="tile-saved">You saved</span>' : '') + '<span class="tile-price">' + money(h.price) + (drop ? '<span class="tile-drop">Price drop</span>' : '') + '</span><span class="tile-addr">' + esc(h.address) + '</span>' +
         '<span class="tile-specs">' + bits.join(' · ') + '</span><span class="tile-more">' + (gone ? 'No longer available' : 'See details') + '</span></div>' +
       (gone ? '' : '<div class="tile-pop"><button class="tile-close" type="button">Close</button>' + card(h, i, {inPop:true}) + '</div>') +
     '</article>';
@@ -279,6 +280,25 @@
 
   // Showcase: every home is a tile in a grid. Homes with an `added` stamp (sent after the link went out)
   // float to the top, newest batch first, each under a dated "Fresh picks" header; originals follow as "Past picks".
+  // Saved-vs-shared filter only makes sense when the page has both kinds
+  function hasBoth(){ var s = homes.filter(function(h){ return h.saved; }).length; return s > 0 && s < homes.length; }
+  function initOriginFilter(){
+    var bar = document.querySelector('.origin-filter'); if(!bar) return;
+    bar.addEventListener('click', function(e){
+      var b = e.target.closest('button[data-origin]'); if(!b) return;
+      var want = b.dataset.origin;
+      bar.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      document.querySelectorAll('#app .tile').forEach(function(t){ t.hidden = want !== 'all' && t.dataset.origin !== want; });
+      // hide a group's header + grid when none of its homes are showing
+      document.querySelectorAll('#app .past-grid').forEach(function(g){
+        var any = [].some.call(g.querySelectorAll('.tile'), function(t){ return !t.hidden; });
+        g.hidden = !any;
+        var head = g.previousElementSibling;
+        if(head && head.classList.contains('group-head')) head.hidden = !any;
+      });
+    });
+  }
+
   function showcaseList(){
     var keys = [], byKey = {};
     homes.forEach(function(h){ var k = h.added || ''; if(!byKey[k]){ byKey[k] = []; keys.push(k); } byKey[k].push(h); });
@@ -289,6 +309,13 @@
     homes = [].concat.apply([], keys.map(function(k){ return byKey[k]; }));   // display order (numbers stay fixed, see _num)
 
     var html = '', n = 0;
+    if(hasBoth()){
+      var nSaved = homes.filter(function(h){ return h.saved; }).length, nShared = homes.length - nSaved;
+      html += '<div class="origin-filter reveal" role="group" aria-label="Show homes">' +
+        '<button type="button" data-origin="all" aria-pressed="true">All <span>' + homes.length + '</span></button>' +
+        '<button type="button" data-origin="saved" aria-pressed="false">You saved <span>' + nSaved + '</span></button>' +
+        '<button type="button" data-origin="shared" aria-pressed="false">From ' + esc(AGENT.name.split(' ')[0]) + ' <span>' + nShared + '</span></button></div>';
+    }
     keys.forEach(function(k){
       // Every home is a compact tile; the full card pops up on hover (computer) or opens on tap (phone).
       if(!hasFresh){ html += '<div class="past-grid">'; byKey[k].forEach(function(h){ html += tile(h, n++); }); html += '</div>'; return; }
@@ -628,4 +655,5 @@
   initLiveTour();
   initReveal();
   initDeepLink();
+  if(!TOUR) initOriginFilter();
 })();

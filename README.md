@@ -65,3 +65,8 @@ extend a page's 30 days.
 first with stage/source/added/active/name filters and "Load more". "Make client page" stores a request in
 Blobs (`client-admin` → `pagerequests/<personId>`); Claude reads them with the connector's `page_requests`
 tool, builds the page, then calls `clear_page_request`.
+
+## Saved vs shared (client pages)
+A listing with `saved: true` is one the client saved (e.g. from their Zillow activity in Follow Up Boss);
+anything else is one Joseph shared. When a page has both, clients get an "All / You saved / From Joseph"
+filter above the grid and saved tiles carry a "You saved" tag.

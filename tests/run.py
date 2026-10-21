@@ -614,11 +614,33 @@ async def connector(browser, base):
     check(r.returncode == 0, 'connector tests failed:\n' + (r.stdout + r.stderr)[-1500:])
 
 
+async def saved_filter(browser, base):
+    print('Saved vs shared: clients can filter to homes they saved or homes Joseph shared')
+    when = dt.datetime(2026, 10, 21, 10, 0)
+    p = await open_page(browser, base, '/tests/fixtures/saved.html', when)
+    labels = await p.evaluate("[...document.querySelectorAll('.origin-filter button')].map(b=>b.textContent)")
+    check(labels == ['All 5', 'You saved 2', 'From Joseph 3'], f'filter shows counts, got {labels}')
+    check(await p.locator('.tile .tile-saved').count() == 2, 'saved homes get a "You saved" tag')
+    vis = lambda: p.evaluate("[...document.querySelectorAll('#app .tile')].filter(t=>!t.hidden).map(t=>t.querySelector('.tile-addr').textContent)")
+    await p.click('.origin-filter [data-origin=saved]'); await p.wait_for_timeout(100)
+    check(sorted(await vis()) == ['2 Original Ln', '4 Fresh Ave'], f'"You saved" shows only saved homes, got {await vis()}')
+    heads = await p.evaluate("[...document.querySelectorAll('.group-head')].filter(h=>!h.hidden).map(h=>h.querySelector('.stamp').textContent)")
+    check(len(heads) == 2, f'groups with nothing showing hide their header, got {heads}')
+    await p.click('.origin-filter [data-origin=shared]'); await p.wait_for_timeout(100)
+    check(sorted(await vis()) == ['1 Original Ln', '3 Fresh Ave', '5 Fresh Ave'], f'"From Joseph" shows the rest, got {await vis()}')
+    await p.click('.origin-filter [data-origin=all]'); await p.wait_for_timeout(100)
+    check(len(await vis()) == 5, 'All brings everything back')
+    await p.context.close()
+    p = await open_page(browser, base, '/tests/fixtures/fresh.html', when)
+    check(await p.locator('.origin-filter').count() == 0 and await p.locator('.tile-saved').count() == 0, 'no filter when a page only has one kind')
+    await p.context.close()
+
+
 async def main():
     base = serve()
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
-        for suite in (real_pages, fresh_picks, tours, edge_cases, updates, reactions, tiles, deep_link, tour_picks, connector, removal, directory, admin):
+        for suite in (real_pages, fresh_picks, tours, edge_cases, updates, reactions, tiles, deep_link, tour_picks, saved_filter, connector, removal, directory, admin):
             await suite(browser, base)
         await browser.close()
     print('\n%d checks passed, %d failed' % (PASSES, len(FAILS)))
