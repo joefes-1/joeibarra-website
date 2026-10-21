@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url)), root = path.resolve(here, '../..')
 const out = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'conn-'))
-for (const f of ['oauth', 'mcp', 'admin']) {
+for (const f of ['oauth', 'mcp', 'admin', 'leads']) {
   execFileSync('npx', ['--yes', 'esbuild@0.24.0', `netlify/functions/${f}.mts`, '--bundle', '--platform=node', '--format=esm',
     `--alias:@netlify/blobs=${path.join(here, 'fake-blobs.mjs')}`, `--outfile=${path.join(out, f + '.mjs')}`, '--log-level=warning'], { cwd: root, stdio: 'inherit' })
 }
@@ -24,6 +24,13 @@ globalThis.fetch = async (url, init = {}) => {
   const J = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { 'content-type': 'application/json' } })
   const p = u.pathname.replace('/v1', '')
   if (p === '/me') return J({ id: 7, name: 'Joseph Ibarra' })
+  if (p === '/stages') return J({ stages: [{ name: 'Lead' }, { name: 'Active Client' }, { name: 'Trash' }] })
+  if (p === '/people' && method === 'GET' && u.searchParams.get('fields')?.includes('created') && globalThis.__leadsMode) {
+    let all = globalThis.__people
+    if (u.searchParams.get('stage')) all = all.filter((x) => x.stage === u.searchParams.get('stage'))
+    const off = +(u.searchParams.get('offset') || 0), lim = +(u.searchParams.get('limit') || 10)
+    return J({ _metadata: { total: all.length }, people: all.slice(off, off + lim) })
+  }
   if (p === '/people' && method === 'GET') return J({ _metadata: { total: 1 }, people: [{ id: 42, name: 'Dolce Ibarra', stage: 'Active Client', emails: [{ value: 'd@x.com' }], phones: [{ value: '555' }], lastActivity: '2026-10-20 10:00:00' }] })
   if (p === '/people/42') return J({ id: 42, name: 'Dolce Ibarra', emails: [{ value: 'd@x.com' }] })
   if (p === '/events') return J({ events: [{ created: '2026-10-19', type: 'Saved Property', property: { street: '1215 Vassar Ln', city: 'Walnut', state: 'CA', code: '91789', mlsNumber: 'CV26223436', price: 1070000, url: 'https://x/listing/1' } }] })
@@ -109,8 +116,8 @@ x = await rpc('tools/list', {}, tok2.access_token, { origin: 'https://evil.examp
 check(x.status === 403, 'other-site browser origin refused')
 x = await rpc('tools/list')
 const tools = x.body.result.tools
-check(tools.length === 9 && tools.every((t) => t.inputSchema && t.annotations && !('run' in t)), 'tools/list returns 9 tools with schemas + annotations')
-check(tools.filter((t) => !t.annotations.readOnlyHint).map((t) => t.name).sort().join() === 'add_note,create_appointment,create_task', 'only add_note/create_appointment/create_task write')
+check(tools.length === 11 && tools.every((t) => t.inputSchema && t.annotations && !('run' in t)), 'tools/list returns 11 tools with schemas + annotations')
+check(tools.filter((t) => !t.annotations.readOnlyHint).map((t) => t.name).sort().join() === 'add_note,clear_page_request,create_appointment,create_task', 'only add_note/create_appointment/create_task (+ clearing a site page request) write')
 x = await rpc('tools/list', {}, 'not-a-token')
 check(x.status === 401, 'bad token -> 401')
 
@@ -146,6 +153,44 @@ check(r.status === 401, 'disconnect needs the admin password')
 r = await admin(new Request(B + '/api/admin', { method: 'POST', headers: { authorization: 'Bearer pw', 'content-type': 'application/json' }, body: JSON.stringify({ action: 'disconnect-claude' }) }))
 x = await rpc('tools/list')
 check(r.status === 200 && x.status === 401, 'Disconnect Claude kills its tokens')
+
+
+// Leads tab (/api/admin/leads)
+const { default: leads } = await import(path.join(out, 'leads.mjs'))
+const now = Date.now()
+globalThis.__people = Array.from({ length: 250 }, (_, i) => ({ id: 1000 + i, name: 'Lead ' + i, stage: i % 2 ? 'Lead' : 'Active Client', source: 'Zillow',
+  created: new Date(now - (250 - i) * 86400000 + 43200000).toISOString(), lastActivity: null }))   // oldest first, like FUB
+globalThis.__leadsMode = true
+const L = (qs = '', auth = 'Bearer pw', init = {}) => leads(new Request(B + '/api/admin/leads' + qs, { headers: { authorization: auth, 'content-type': 'application/json' }, ...init }))
+r = await L('', 'Bearer nope')
+check(r.status === 401, 'leads need the admin password')
+r = await L('?limit=50')
+let d = await r.json()
+check(d.leads.length === 50 && d.leads[0].id === 1249 && d.leads[49].id === 1200 && d.nextCursor === 200, 'leads come newest first with a cursor for Load more')
+check(d.stages.includes('Active Client'), 'stage list comes back for the filter')
+r = await L('?limit=50&cursor=' + d.nextCursor); d = await r.json()
+check(d.leads[0].id === 1199, 'Load more continues where it left off')
+r = await L('?createdDays=10&limit=200'); d = await r.json()
+check(d.leads.length === 10 && d.leads.every((x) => +new Date(x.created) >= now - 10 * 86400000 - 1000) && d.nextCursor === null, 'created-in-last-10-days stops at the cutoff')
+r = await L('?stage=Lead&limit=5'); d = await r.json()
+check(d.leads.every((x) => x.stage === 'Lead'), 'stage filter passes through to FUB')
+r = await L('', 'Bearer pw', { method: 'POST', body: JSON.stringify({ action: 'request-page', personId: 1249, name: 'Lead 249' }) })
+r = await L('?limit=1'); d = await r.json()
+check(d.requested.includes(1249), 'Make client page saves a request that the tab shows')
+globalThis.__leadsMode = false
+const fresh = async () => {
+  const lc = (await oauth(new Request(B + '/oauth/authorize', form({ ...Object.fromEntries(q), password: 'pw' })))).headers.get('location')
+  const t = await oauth(new Request(B + '/oauth/token', form({ grant_type: 'authorization_code', code: new URL(lc).searchParams.get('code'), client_id, redirect_uri: CB, code_verifier: verifier })))
+  return (await t.json()).access_token
+}
+const t3 = await fresh()
+x = await rpc('tools/call', { name: 'page_requests', arguments: {} }, t3)
+check(JSON.parse(x.body.result.content[0].text).requests.some((r) => r.personId === 1249 && r.name === 'Lead 249'), 'Claude can read page requests through the connector')
+x = await rpc('tools/call', { name: 'clear_page_request', arguments: { personId: 1249 } }, t3)
+globalThis.__leadsMode = true
+r = await L('?limit=1'); d = await r.json()
+check(!d.requested.includes(1249), 'clearing the request removes it from the Leads tab')
+globalThis.__leadsMode = false
 
 globalThis.fetch = realFetch
 fs.rmSync(out, { recursive: true, force: true })

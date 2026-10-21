@@ -413,6 +413,39 @@ async def admin(browser, base):
     await pg.locator('.hide-all').click(); await pg.wait_for_timeout(500)
     check(posts and posts[0]['action'] == 'hide' and len(posts[0]['items']) == 2, f'Hide all should hide every reaction showing, got {posts}')
     await pg.context.close()
+    # Leads tab: FUB contacts with filters, Make client page, existing pages link to the page
+    pg = await page_with(200, ADMIN_DATA, stored='test-password')
+    lead_calls, lead_posts = [], []
+    async def leads_api(route):
+        req = route.request
+        if req.method == 'POST':
+            lead_posts.append(json.loads(req.post_data))
+            return await route.fulfill(status=200, content_type='application/json', body='{"ok":true}')
+        lead_calls.append(req.url)
+        body = {'leads': [{'id': 1, 'name': 'Tess Test', 'stage': 'Lead', 'source': 'Zillow', 'created': '2026-10-20T10:00:00Z', 'lastActivity': '2026-10-22T08:00:00Z'},
+                          {'id': 2, 'name': 'New Person', 'stage': 'Active Client', 'source': 'Referral', 'created': '2026-10-19T10:00:00Z', 'lastActivity': None}],
+                'requested': [], 'stages': ['Lead', 'Active Client'], 'nextCursor': 7, 'total': 120}
+        await route.fulfill(status=200, content_type='application/json', body=json.dumps(body))
+    await pg.route('**/api/admin/leads**', leads_api)
+    check(await pg.locator('[data-body=leads]').is_hidden(), 'admin opens on Client pages')
+    await pg.click('.tabs [data-tab=leads]'); await pg.wait_for_timeout(300)
+    check(await pg.locator('.lead').count() == 2 and lead_calls, 'Leads tab loads Follow Up Boss contacts')
+    check('120 contacts' in await pg.inner_text('#leads-count'), 'Leads tab shows the total')
+    await pg.select_option('#lf-stage', 'Active Client'); await pg.wait_for_timeout(300)
+    check('stage=Active+Client' in lead_calls[-1] or 'stage=Active%20Client' in lead_calls[-1], f'stage filter goes to the server, got {lead_calls[-1]}')
+    await pg.select_option('#lf-created', '7'); await pg.select_option('#lf-activity', '1'); await pg.select_option('#lf-source', 'Zillow'); await pg.wait_for_timeout(300)
+    check('createdDays=7' in lead_calls[-1] and 'activityDays=1' in lead_calls[-1] and 'source=Zillow' in lead_calls[-1], f'date/activity/source filters go to the server, got {lead_calls[-1]}')
+    await pg.click('#leads-more'); await pg.wait_for_timeout(300)
+    check('cursor=7' in lead_calls[-1], 'Load more passes the cursor')
+    await pg.locator('.lead-make').first.click(); await pg.wait_for_timeout(300)
+    check(lead_posts and lead_posts[0]['action'] == 'request-page' and lead_posts[0]['personId'] in (1, 2), f'Make client page posts a request, got {lead_posts}')
+    check(await pg.locator('.req').count() >= 1, 'requested lead shows "Page requested"')
+    await pg.locator('.lead-undo').first.click(); await pg.wait_for_timeout(300)
+    check(lead_posts[-1]['action'] == 'cancel-request', 'Undo cancels the request')
+    await pg.reload(); await pg.wait_for_timeout(500)
+    check(await pg.locator('[data-body=leads]').is_visible(), 'admin remembers the last tab')
+    check(not pg.errors, f'admin leads script errors: {pg.errors}')
+    await pg.context.close()
     # setup message when the password hasn't been added in Netlify yet
     pg = await page_with(503, {'error': 'setup'}, stored='x')
     check('ADMIN_PASSWORD' in await pg.inner_text('body'), 'admin should explain when the password is not set up yet')

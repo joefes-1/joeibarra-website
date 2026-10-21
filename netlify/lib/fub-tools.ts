@@ -4,6 +4,8 @@
 // API: https://api.followupboss.com/v1, HTTP Basic with the key as the username (FUB_API_KEY in Netlify).
 // Optional FUB_SYSTEM / FUB_SYSTEM_KEY (registered system) double FUB's rate limits.
 
+import { getStore } from "@netlify/blobs"
+
 const BASE = "https://api.followupboss.com/v1"
 const TZ = "America/Los_Angeles"
 
@@ -251,6 +253,28 @@ export const TOOLS: Tool[] = [
       const when = /^\d{4}-\d\d-\d\d$/.test(due) ? { dueDate: due } : { dueDateTime: pacificIso(parseWhen(due, "due")) }
       const t = await fub("/tasks", { method: "POST", body: { personId, name, type: a.type || "Follow Up", assignedUserId: u.id, ...when } })
       return { created: true, taskId: t?.id, personId, name, ...when }
+    },
+  },
+  // Joseph's "Make client page" requests from the Leads tab on /admin (stored on his site, not in FUB)
+  {
+    name: "page_requests", title: "Client page requests", annotations: READ,
+    description: "Contacts Joseph marked on his /admin Leads tab with \"Make client page\". Build their homes page with the client-homes-pages workflow, then call clear_page_request.",
+    inputSchema: obj({}),
+    run: async () => {
+      const s = getStore({ name: "client-admin", consistency: "strong" })
+      const { blobs } = await s.list({ prefix: "pagerequests/" })
+      const reqs = await Promise.all(blobs.map((b) => s.get(b.key, { type: "json" })))
+      return { requests: reqs.filter(Boolean).sort((x: any, y: any) => String(x.at).localeCompare(String(y.at))) }
+    },
+  },
+  {
+    name: "clear_page_request", title: "Clear a client page request", annotations: { ...ADD, idempotentHint: true },
+    description: "Remove a request from the /admin Leads tab once that contact's homes page is built (or Joseph changes his mind).",
+    inputSchema: obj({ personId: { type: "integer" } }, ["personId"]),
+    run: async (a) => {
+      const id = int(a.personId, "personId")
+      await getStore({ name: "client-admin", consistency: "strong" }).delete(`pagerequests/${id}`)
+      return { cleared: true, personId: id }
     },
   },
 ]

@@ -59,3 +59,9 @@ extend a page's 30 days.
   No editing, deleting or sending texts/emails. Times are Pacific.
 - Needs `FUB_API_KEY` in Netlify env (Functions scope). Optional `FUB_SYSTEM`/`FUB_SYSTEM_KEY`.
 - Tests: `node tests/connector/run.mjs` (also run by `python3 tests/run.py`).
+
+## Leads tab (/admin)
+`netlify/functions/leads.mts` (`/api/admin/leads`, admin password) lists Follow Up Boss contacts newest
+first with stage/source/added/active/name filters and "Load more". "Make client page" stores a request in
+Blobs (`client-admin` → `pagerequests/<personId>`); Claude reads them with the connector's `page_requests`
+tool, builds the page, then calls `clear_page_request`.

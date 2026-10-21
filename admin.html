@@ -25,6 +25,27 @@
 .count{font-size:14px;color:var(--muted)}
 .muted{color:var(--muted)}
 
+/* Tabs */
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-top:-8px}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font:700 15px var(--sans);color:var(--muted);cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--slate)}
+.tab-body{display:flex;flex-direction:column;gap:28px}
+/* Leads */
+.lead-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.lead-filters label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.lead-filters select,.lead-filters input{font:inherit;font-size:15px;color:var(--ink);background:#fff;border:1.5px solid #CFC8BA;border-radius:10px;padding:0 10px;min-height:42px;min-width:0}
+.leads{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.lead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.lead-name{font-weight:700;color:var(--ink);text-decoration:none;font-size:16px}
+.lead-name:hover{text-decoration:underline}
+.lead-meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--muted);margin-top:3px}
+.lead-meta .pill{font-size:10px;padding:2px 8px}
+.lead .btn{min-height:36px;padding:0 12px;font-size:13px;white-space:nowrap}
+.lead .req{font-size:13px;font-weight:700;color:var(--green-deep, #24603D);display:flex;gap:8px;align-items:center}
+.lead .req button{background:none;border:0;padding:0;font:700 13px var(--sans);color:var(--muted);text-decoration:underline;cursor:pointer}
+.leads-more{align-self:center}
+@media (max-width:640px){.lead{grid-template-columns:1fr}}
+
 /* Login */
 .login{display:flex;flex-direction:column;gap:14px;max-width:420px}
 .login label{font-size:13px;font-weight:700;color:var(--ink)}
@@ -201,6 +222,9 @@
     view.innerHTML =
       '<div class="head-row"><div><div class="eyebrow">Private</div><h1>Your client pages</h1></div>' +
         '<button class="btn btn-soft" id="refresh" type="button">Refresh</button></div>' +
+      '<nav class="tabs" role="tablist"><button type="button" role="tab" data-tab="pages">Client pages</button>' +
+        '<button type="button" role="tab" data-tab="leads">Leads</button></nav>' +
+      '<div class="tab-body" data-body="pages">' +
 
       '<section class="panel"><div class="panel-head"><h2>Client reactions</h2><span class="count">' +
         (shown.length ? shown.length + (shown.length === 1 ? ' reaction' : ' reactions') + (fresh ? ' · ' + fresh + ' new' : '') : '') +
@@ -219,15 +243,111 @@
 
       (expired.length ? '<details class="expired"><summary>Expired pages (' + expired.length + ')</summary><div class="pages">' +
         expired.map(function(p){ return pageCard(p, counts[p.page]); }).join('') + '</div></details>' : '') +
+      (removed.length ? '<details class="expired removed"><summary>Removed pages (' + removed.length + ')</summary><div class="pages">' +
+        removed.map(function(p){ return pageCard(p, null, removedAt[p.page].at); }).join('') + '</div></details>' : '') +
       '<section class="panel"><div class="panel-head"><h2>Claude &amp; Follow Up Boss</h2></div>' +
         '<p class="muted">Claude signs in to your Follow Up Boss connection with this password. If a device is lost or you just want to cut it off, disconnect it here; Claude will ask for the password again next time.</p>' +
         '<div><button class="btn btn-soft" id="disconnect-claude" type="button">Disconnect Claude</button></div></section>' +
-      (removed.length ? '<details class="expired removed"><summary>Removed pages (' + removed.length + ')</summary><div class="pages">' +
-        removed.map(function(p){ return pageCard(p, null, removedAt[p.page].at); }).join('') + '</div></details>' : '');
+      '</div>' +
+      '<div class="tab-body" data-body="leads" hidden>' + leadsShell() + '</div>';
+    pagesBySlug = {}; pages.forEach(function(p){ if(!isRemoved(p)) pagesBySlug[p.page] = p; });
+    leadsLoaded = false;
+    showTab(get(TAB) || 'pages');
 
     set(SEEN, new Date().toISOString());   // everything on screen now counts as seen next time
     document.getElementById('refresh').addEventListener('click', function(){ load(current); });
   }
+
+  /* ---------- Tabs ---------- */
+  var TAB = 'joeibarra-admin-tab', pagesBySlug = {}, leadsLoaded = false;
+  function showTab(name){
+    if(name !== 'leads') name = 'pages';
+    document.querySelectorAll('.tabs [data-tab]').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.tab === name ? 'true' : 'false'); });
+    document.querySelectorAll('.tab-body').forEach(function(d){ d.hidden = d.dataset.body !== name; });
+    set(TAB, name);
+    if(name === 'leads' && !leadsLoaded){ leadsLoaded = true; loadLeads(false); }
+  }
+  document.addEventListener('click', function(e){ var t = e.target.closest('.tabs [data-tab]'); if(t) showTab(t.dataset.tab); });
+
+  /* ---------- Leads (Follow Up Boss) ---------- */
+  var leadState = {cursor:null, requested:[], stages:null, sources:{}, byId:{}};
+  function slug(name){ return String(name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+  function sel(id, label, opts){
+    return '<label>' + label + '<select id="' + id + '">' + opts.map(function(o){ return '<option value="' + esc(o[0]) + '">' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
+  }
+  function leadsShell(){
+    return '<section class="panel"><div class="panel-head"><h2>Leads</h2><span class="count" id="leads-count"></span></div>' +
+      '<p class="muted">Your Follow Up Boss contacts. Nothing goes on your site unless you hit <strong>Make client page</strong>, then tell Claude to build your requested pages.</p>' +
+      '<div class="lead-filters">' +
+        '<label>Name<input id="lf-q" type="search" placeholder="Search name"></label>' +
+        sel('lf-stage', 'Stage', [['', 'All stages']]) +
+        sel('lf-source', 'Source', [['', 'All sources']]) +
+        sel('lf-created', 'Added', [['', 'Any time'], ['1', 'Today'], ['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year']]) +
+        sel('lf-activity', 'Active', [['', 'Any time'], ['1', 'Last 24 hours'], ['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days']]) +
+        sel('lf-sort', 'Sort', [['created', 'Newest leads'], ['lastActivity', 'Recent activity']]) +
+      '</div><ul class="leads" id="leads"></ul><p class="muted" id="leads-msg"></p>' +
+      '<button class="btn btn-soft leads-more" id="leads-more" type="button" hidden>Load more</button></section>';
+  }
+  function leadRow(l){
+    var page = pagesBySlug[slug(l.name)], requested = leadState.requested.indexOf(l.id) > -1;
+    var action = page ? '<a class="btn btn-soft" href="' + esc(page.path) + '">Open client page</a>'
+      : requested ? '<span class="req">✓ Page requested <button type="button" class="lead-undo" data-id="' + l.id + '">Undo</button></span>'
+      : '<button class="btn btn-solid lead-make" type="button" data-id="' + l.id + '" data-name="' + esc(l.name) + '">Make client page</button>';
+    return '<li class="lead"><div><a class="lead-name" href="https://app.followupboss.com/2/people/view/' + l.id + '">' + esc(l.name || 'No name') + '</a>' +
+      '<div class="lead-meta">' + (l.stage ? '<span class="pill">' + esc(l.stage) + '</span>' : '') + (l.source ? '<span>' + esc(l.source) + '</span>' : '') +
+      (l.created ? '<span>Added ' + esc(new Date(l.created).toLocaleDateString('en-US', {month:'short', day:'numeric', year: new Date(l.created).getFullYear() === new Date().getFullYear() ? undefined : 'numeric'})) + '</span>' : '') +
+      (l.lastActivity ? '<span>Active ' + esc(ago(l.lastActivity)) + '</span>' : '') + '</div></div>' + action + '</li>';
+  }
+  function leadQuery(more){
+    var q = new URLSearchParams();
+    [['q','lf-q'],['stage','lf-stage'],['source','lf-source'],['createdDays','lf-created'],['activityDays','lf-activity'],['sort','lf-sort']].forEach(function(p){
+      var v = document.getElementById(p[1]).value; if(v) q.set(p[0], v); });
+    q.set('limit', '50');
+    if(more && leadState.cursor != null) q.set('cursor', leadState.cursor);
+    return q.toString();
+  }
+  function loadLeads(more){
+    var list = document.getElementById('leads'), msg = document.getElementById('leads-msg'), btn = document.getElementById('leads-more');
+    if(!list) return;
+    if(!more){ list.innerHTML = ''; leadState.cursor = null; }
+    msg.textContent = 'Loading…'; btn.hidden = true;
+    fetch('/api/admin/leads?' + leadQuery(more), {headers:{Authorization:'Bearer ' + current}, cache:'no-store'})
+      .then(function(res){ return res.json().then(function(d){ if(!res.ok) throw new Error(d.error || res.status); return d; }); })
+      .then(function(d){
+        leadState.requested = d.requested || leadState.requested;
+        if(d.stages && !leadState.stages){
+          leadState.stages = d.stages;
+          var s = document.getElementById('lf-stage');
+          d.stages.forEach(function(n){ var o = document.createElement('option'); o.value = o.textContent = n; s.appendChild(o); });
+        }
+        var src = document.getElementById('lf-source');
+        (d.leads || []).forEach(function(l){ if(l.source && !leadState.sources[l.source]){ leadState.sources[l.source] = 1; var o = document.createElement('option'); o.value = o.textContent = l.source; src.appendChild(o); } });
+        (d.leads || []).forEach(function(l){ leadState.byId[l.id] = l; });
+        list.insertAdjacentHTML('beforeend', (d.leads || []).map(leadRow).join(''));
+        leadState.cursor = d.nextCursor;
+        if(d.total != null) document.getElementById('leads-count').textContent = d.total + (d.total === 1 ? ' contact' : ' contacts');
+        msg.textContent = list.children.length ? '' : 'No leads match these filters.';
+        btn.hidden = d.nextCursor == null;
+      })
+      .catch(function(err){ msg.textContent = /FUB_API_KEY/.test(err.message) ? 'Follow Up Boss isn’t connected yet (FUB_API_KEY in Netlify).' : 'Couldn’t load leads: ' + err.message; });
+  }
+  var leadTimer;
+  document.addEventListener('change', function(e){ if(e.target.closest('.lead-filters')) loadLeads(false); });
+  document.addEventListener('input', function(e){ if(e.target.id === 'lf-q'){ clearTimeout(leadTimer); leadTimer = setTimeout(function(){ loadLeads(false); }, 400); } });
+  document.addEventListener('click', function(e){
+    if(e.target.closest('#leads-more')) return loadLeads(true);
+    var b = e.target.closest('.lead-make, .lead-undo'); if(!b) return;
+    var make = b.classList.contains('lead-make'), id = +b.dataset.id;
+    b.disabled = true;
+    fetch('/api/admin/leads', {method:'POST', cache:'no-store', headers:{'Content-Type':'application/json', Authorization:'Bearer ' + current},
+      body: JSON.stringify({action: make ? 'request-page' : 'cancel-request', personId:id, name:b.dataset.name || ''})})
+      .then(function(res){
+        if(!res.ok) throw new Error(res.status);
+        if(make) leadState.requested.push(id); else leadState.requested = leadState.requested.filter(function(x){ return x !== id; });
+        b.closest('.lead').outerHTML = leadRow(leadState.byId[id]);
+      })
+      .catch(function(){ b.disabled = false; alert('That didn’t go through. Try again.'); });
+  });
 
   function feedItem(f, lastSeen, isHiddenItem){
     var who = f.page.client || 'Client', rx = REACTION[f.r];
