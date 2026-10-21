@@ -226,13 +226,18 @@
     if(h.sqft) bits.push(Number(h.sqft).toLocaleString('en-US') + ' sq ft');
     var photo = safeUrl(h.photo), kind = statusKind(h);
     var drop = typeof h.was === 'number' && typeof h.price === 'number' && h.price < h.was;
-    return '<article class="tile reveal' + (h.added ? ' is-fresh' : '') + (kind ? ' is-' + kind : '') + '"' + (REACT ? ' data-home="' + h._id + '"' : '') + ' tabindex="0" aria-label="' + esc(h.address) + ', ' + money(h.price) + '. Show details">' +
+    // Sold / off market: stays on the page (numbers don't shift) but greyed out, with no card, reactions or links.
+    var gone = kind === 'sold' || kind === 'off';
+    return '<article class="tile reveal' + (h.added ? ' is-fresh' : '') + (kind ? ' is-' + kind : '') + (gone ? ' is-unavailable' : '') + '"' +
+      (REACT && !gone ? ' data-home="' + h._id + '"' : '') +
+      (gone ? ' aria-disabled="true" aria-label="' + esc(h.address) + ', ' + esc(h.status) + '. No longer available">'
+            : ' tabindex="0" aria-label="' + esc(h.address) + ', ' + money(h.price) + '. Show details">') +
       '<div class="tile-photo">' + (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy">' : '') + '<span class="tile-num">' + h._num + '</span>' +
         (kind ? '<span class="tile-status ' + kind + '">' + esc(h.status) + '</span>' : '') +
-        (REACT ? '<span class="react-badge" hidden></span>' : '') + '</div>' +
+        (REACT && !gone ? '<span class="react-badge" hidden></span>' : '') + '</div>' +
       '<div class="tile-body">' + (h.added ? '<span class="tile-fresh">Fresh pick</span>' : '') + '<span class="tile-price">' + money(h.price) + (drop ? '<span class="tile-drop">Price drop</span>' : '') + '</span><span class="tile-addr">' + esc(h.address) + '</span>' +
-        '<span class="tile-specs">' + bits.join(' · ') + '</span><span class="tile-more">See details</span></div>' +
-      '<div class="tile-pop"><button class="tile-close" type="button">Close</button>' + card(h, i, {inPop:true}) + '</div>' +
+        '<span class="tile-specs">' + bits.join(' · ') + '</span><span class="tile-more">' + (gone ? 'No longer available' : 'See details') + '</span></div>' +
+      (gone ? '' : '<div class="tile-pop"><button class="tile-close" type="button">Close</button>' + card(h, i, {inPop:true}) + '</div>') +
     '</article>';
   }
 
@@ -514,7 +519,7 @@
 
   /* ---------- Past-pick tiles ---------- */
   function initTiles(){
-    var tiles = document.querySelectorAll('.tile');
+    var tiles = document.querySelectorAll('.tile:not(.is-unavailable)');
     if(!tiles.length) return;
     // Pop-up position: pick a side so it stays inside the grid, and shift it up if it would run past the bottom.
     function placePop(t){

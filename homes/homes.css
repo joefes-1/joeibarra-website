@@ -112,6 +112,13 @@ p{margin:0}
 .past-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .fresh-grid + .group-head{margin-top:8px}
 .tile.is-fresh{border:1.5px solid #8CC7A3;box-shadow:0 0 0 3px #EEF7F1}
+/* Sold / off market: greyed out and not clickable */
+.tile.is-unavailable{cursor:default;pointer-events:none;background:#F6F5F2;border-color:var(--line);box-shadow:none}
+.tile.is-unavailable .tile-photo img{filter:grayscale(1);opacity:.55}
+.tile.is-unavailable .tile-body{opacity:.6}
+.tile.is-unavailable .tile-more{color:var(--muted)}
+.tile.is-unavailable .tile-more::after{content:none}
+.tile.is-unavailable .tile-fresh{filter:grayscale(1)}
 .tile-fresh{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;background:var(--green-tint);color:var(--green-deep);border-radius:999px;padding:2px 8px;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:2px}
 .tile-fresh::before{content:"";width:6px;height:6px;border-radius:50%;background:#2F9A5C}
 @media (max-width:640px){.past-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}

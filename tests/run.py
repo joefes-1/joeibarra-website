@@ -475,6 +475,12 @@ async def updates(browser, base):
     flags = await p.evaluate("[...document.querySelectorAll('.tile-status')].map(e=>e.textContent.toLowerCase())")
     check(flags == ['pending', 'sold'], f'past-pick tiles should flag pending/sold, got {flags}')
     check(await p.evaluate("document.querySelectorAll('.tile-drop').length") == 1, 'price drop should show on the tile')
+    sold = p.locator('.tile.is-sold')
+    check(await sold.count() == 1 and await sold.locator('.tile-pop').count() == 0 and await sold.locator('.react-badge, .react').count() == 0,
+          'sold/off-market tiles have no card or reactions')
+    check(await sold.evaluate("e => getComputedStyle(e).pointerEvents") == 'none' and await sold.locator('.tile-body').evaluate("e => +getComputedStyle(e).opacity") < 1 and 'No longer available' in await sold.inner_text(),
+          'sold/off-market tiles are greyed out and can\'t be clicked')
+    check(await p.locator('.tile.is-pending').evaluate("e => getComputedStyle(e).pointerEvents") != 'none', 'pending homes stay clickable')
     check('updated oct 18' in await text(p), 'intro should say when prices and open houses were last updated')
     await p.context.close()
     p = await open_page(browser, base, '/tests/fixtures/updates.html', dt.datetime(2026, 10, 18, 16, 1))
