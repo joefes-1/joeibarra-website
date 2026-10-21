@@ -223,7 +223,7 @@
       '<div class="head-row"><div><div class="eyebrow">Private</div><h1>Your client pages</h1></div>' +
         '<button class="btn btn-soft" id="refresh" type="button">Refresh</button></div>' +
       '<nav class="tabs" role="tablist"><button type="button" role="tab" data-tab="pages">Client pages</button>' +
-        '<button type="button" role="tab" data-tab="leads">Leads</button></nav>' +
+        '<button type="button" role="tab" data-tab="leads">Contacts</button></nav>' +
       '<div class="tab-body" data-body="pages">' +
 
       '<section class="panel"><div class="panel-head"><h2>Client reactions</h2><span class="count">' +
@@ -276,7 +276,7 @@
     return '<label>' + label + '<select id="' + id + '">' + opts.map(function(o){ return '<option value="' + esc(o[0]) + '">' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
   }
   function leadsShell(){
-    return '<section class="panel"><div class="panel-head"><h2>Leads</h2><span class="count" id="leads-count"></span></div>' +
+    return '<section class="panel"><div class="panel-head"><h2>Contacts</h2><span class="count" id="leads-count"></span></div>' +
       '<p class="muted">Your Follow Up Boss contacts. Nothing goes on your site unless you hit <strong>Make client page</strong>, then tell Claude to build your requested pages.</p>' +
       '<div class="lead-filters">' +
         '<label>Name<input id="lf-q" type="search" placeholder="Search name"></label>' +
@@ -284,7 +284,7 @@
         sel('lf-source', 'Source', [['', 'All sources']]) +
         sel('lf-created', 'Added', [['', 'Any time'], ['1', 'Today'], ['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days'], ['365', 'Last year']]) +
         sel('lf-activity', 'Active', [['', 'Any time'], ['1', 'Last 24 hours'], ['7', 'Last 7 days'], ['30', 'Last 30 days'], ['90', 'Last 90 days']]) +
-        sel('lf-sort', 'Sort', [['created', 'Newest leads'], ['lastActivity', 'Recent activity']]) +
+        sel('lf-sort', 'Sort', [['created', 'Newest added'], ['lastActivity', 'Recent activity']]) +
       '</div><ul class="leads" id="leads"></ul><p class="muted" id="leads-msg"></p>' +
       '<button class="btn btn-soft leads-more" id="leads-more" type="button" hidden>Load more</button></section>';
   }
@@ -329,10 +329,10 @@
         list.insertAdjacentHTML('beforeend', (d.leads || []).map(leadRow).join(''));
         leadState.cursor = d.nextCursor;
         if(d.total != null) document.getElementById('leads-count').textContent = d.total + (d.total === 1 ? ' contact' : ' contacts');
-        msg.textContent = list.children.length ? '' : 'No leads match these filters.';
+        msg.textContent = list.children.length ? '' : 'No contacts match these filters.';
         btn.hidden = d.nextCursor == null;
       })
-      .catch(function(err){ if(seq !== leadState.seq) return; msg.textContent = /FUB_API_KEY/.test(err.message) ? 'Follow Up Boss isn’t connected yet (FUB_API_KEY in Netlify).' : 'Couldn’t load leads: ' + err.message; });
+      .catch(function(err){ if(seq !== leadState.seq) return; msg.textContent = /FUB_API_KEY/.test(err.message) ? 'Follow Up Boss isn’t connected yet (FUB_API_KEY in Netlify).' : 'Couldn’t load contacts: ' + err.message; });
   }
   var leadTimer;
   document.addEventListener('change', function(e){ if(e.target.closest('.lead-filters') && e.target.id !== 'lf-q') loadLeads(false); });
