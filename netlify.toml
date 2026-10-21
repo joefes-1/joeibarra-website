@@ -5,3 +5,10 @@
 [build]
   publish = "."
   command = "node scripts/build-previews.mjs && node scripts/build-directory.mjs"
+
+# Tour calendar files ("Add to my calendar" on tour pages): open in Calendar instead of as text
+[[headers]]
+  for = "/homes/*.ics"
+  [headers.values]
+    Content-Type = "text/calendar; charset=utf-8"
+    Content-Disposition = "inline; filename=home-tour.ics"

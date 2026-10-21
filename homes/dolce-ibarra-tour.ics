@@ -1,0 +1,30 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//joeibarra.com//Home tours//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:dolce-ibarra-tour-2026-10-17@joeibarra.com
+DTSTAMP:20261016T070000Z
+DTSTART:20261017T170000Z
+DTEND:20261017T193000Z
+SUMMARY:Home tour with Joseph Ibarra
+LOCATION:20977 E Canyon Ridge Lane\, Diamond Bar\, CA 91789
+DESCRIPTION:Showing details: https://joeibarra.com/homes/dolce-ibarra-tour\
+ n\n1. 10am  20977 E Canyon Ridge Lane\, Diamond Bar\, CA 91789\n2. 10:35am
+   20774 Timberline Lane\, Diamond Bar\, CA 91789\n3. 11:20am  21138 Valley
+ view Drive\, Walnut\, CA 91789\n4. 12pm  1215 Vassar Lane\, Walnut\, CA 91
+ 789\n\nJoseph Ibarra · (714) 507-5438
+URL:https://joeibarra.com/homes/dolce-ibarra-tour
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Home tour today with Joseph Ibarra
+TRIGGER;VALUE=DATE-TIME:20261017T150000Z
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Home tour with Joseph Ibarra in 1 hour
+TRIGGER:-PT1H
+END:VALARM
+END:VEVENT
+END:VCALENDAR

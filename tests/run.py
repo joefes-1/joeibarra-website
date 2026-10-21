@@ -152,6 +152,17 @@ async def tours(browser, base):
     check(links == urls and any(links), f'tour photos should link to the full listing, got {links}')
     dup = await p.evaluate("[...document.querySelectorAll('.home')].filter(e=>e.querySelector('.photo-link') && [...e.querySelectorAll('.actions a')].some(a=>/full listing/i.test(a.textContent))).length")
     check(dup == 0, f'a card whose photo links to the listing should not also have a Full listing button ({dup} do)')
+    cal = await p.evaluate("""(()=>{ const d=document.querySelector('.intro .cal-pick'); if(!d) return null;
+      const a=[...d.querySelectorAll('.cal-menu a')]; return {label:d.querySelector('summary').textContent, open:d.open, links:a.map(x=>[x.textContent, x.getAttribute('href')])} })()""")
+    check(cal and 'Add to my calendar' in cal['label'] and not cal['open'], f'tour intro should have a closed "Add to my calendar" button, got {cal}')
+    check(cal and cal['links'][0] == ['Apple or Outlook', '/homes/test-tour.ics'], f'Apple/Outlook option should open /homes/<page>.ics, got {cal}')
+    g = cal['links'][1][1] if cal else ''
+    check('calendar.google.com/calendar/render' in g and 'dates=20261017T100000/20261017T115000' in g and 'ctz=America/Los_Angeles' in g,
+          f'Google option: first stop to last stop + 30 min, Pacific, got {g}')
+    check('test-tour' in g and 'Stop%20Rd' in g, 'Google event details include the tour link and the stops')
+    await p.context.close()
+    p = await open_page(browser, base, '/tests/fixtures/tour-nodate.html')
+    check(await p.evaluate("!document.querySelector('.cal-pick')"), 'no calendar button on a tour with no date')
     await p.context.close()
     for when, ended in [((2026, 10, 19, 23, 59), False), ((2026, 10, 20, 0, 1), True)]:
         p = await open_page(browser, base, '/tests/fixtures/tour.html', dt.datetime(*when))
@@ -272,6 +283,12 @@ async def directory(browser, base):
         check(html.count('<!-- preview:start -->') == 1 and 'property="og:title"' in html and 'property="og:url" content="https://joeibarra.com/homes/' in html,
               f'{os.path.basename(f)} should have exactly one link-preview block')
         check('.html"' not in html.split('<!-- preview:start -->')[1].split('<!-- preview:end -->')[0], f'{os.path.basename(f)} preview url should not end in .html')
+    ics = open(os.path.join(ROOT, 'homes', 'dolce-ibarra-tour.ics'), newline='').read()
+    check(all(x in ics for x in ['DTSTART:20261017T170000Z', 'DTEND:20261017T193000Z', 'TRIGGER;VALUE=DATE-TIME:20261017T150000Z', 'TRIGGER:-PT1H',
+          'URL:https://joeibarra.com/homes/dolce-ibarra-tour', 'SUMMARY:Home tour with Joseph Ibarra']) and '\r\n' in ics,
+          'tour .ics: 10am-12:30pm Pacific in UTC, 8am + 1-hour reminders, tour link')
+    check(all(len(l.encode()) <= 75 for l in ics.split('\r\n')), 'tour .ics lines are folded to 75 bytes')
+    check(not [f for f in glob.glob(os.path.join(ROOT, 'homes', '*.ics')) if not os.path.exists(f[:-4] + '.html')], 'no .ics left behind for a removed tour')
     tour = open(os.path.join(ROOT, 'homes', 'dolce-ibarra-tour.html')).read()
     check('content="Dolce\'s home tour, Sat Oct 17"' in tour and 'content="4 homes starting at 10am, first stop 20977 E Canyon Ridge Lane"' in tour
           and 'og:image" content="https://ssl.cdn-redfin.com/photo/45/bigphoto/396/WS26120396_0.jpg"' in tour, 'tour preview: client, date, stop count, first stop + its photo')

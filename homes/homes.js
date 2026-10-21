@@ -74,6 +74,7 @@
     out:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>',
     msg:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>',
     car:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14M6 17v2M18 17v2M4 13l2-5a2 2 0 0 1 2-1.3h8a2 2 0 0 1 2 1.3l2 5v4H4z"/><circle cx="8" cy="14" r=".6"/><circle cx="16" cy="14" r=".6"/></svg>',
+    cal:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
     route:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h7"/></svg>'
   };
   var REACTION = {
@@ -254,6 +255,28 @@
       '<div class="actions">' + mapButtons(fullAddress(to)) + '</div></div></div>';
   }
 
+  /* ---------- Add to calendar (tours) ----------
+     Apple / Outlook get /homes/<page>.ics (built on deploy by scripts/build-previews.mjs, with reminders the
+     morning of and 1 hour before); Google gets a prefilled event link. Times are Pacific. */
+  function calTimes(){
+    if(!TOUR || !D.date || !homes.length || !homes[0].time) return null;
+    var last = homes[homes.length - 1].time || homes[0].time, p = last.split(':'), m = +p[0] * 60 + +p[1] + 30;
+    var pad = function(n){ return (n < 10 ? '0' : '') + n; };
+    return {start: homes[0].time, end: pad(Math.floor(m / 60) % 24) + ':' + pad(m % 60)};
+  }
+  function calButton(){
+    var t = calTimes(); if(!t) return '';
+    var day = D.date.replace(/-/g, ''), stamp = function(hm){ return day + 'T' + hm.replace(':', '') + '00'; };
+    var link = location.origin + '/homes/' + PAGE;
+    var details = 'Showing details: ' + link + '\n\n' + homes.map(function(h){ return h._num + '. ' + clock(h.time) + '  ' + fullAddress(h); }).join('\n') +
+      '\n\n' + AGENT.name + ' · ' + AGENT.phoneText;
+    var google = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + enc('Home tour with ' + AGENT.name) +
+      '&dates=' + stamp(t.start) + '/' + stamp(t.end) + '&ctz=America/Los_Angeles&location=' + enc(fullAddress(homes[0])) + '&details=' + enc(details);
+    return '<details class="cal-pick"><summary class="btn btn-solid">' + ICON.cal + 'Add to my calendar</summary><div class="cal-menu">' +
+      '<a class="btn btn-ghost" href="/homes/' + enc(PAGE) + '.ics">Apple or Outlook</a>' +
+      '<a class="btn btn-ghost" href="' + google + '" target="_blank" rel="noopener">Google Calendar</a></div></details>';
+  }
+
   /* ---------- Page sections ---------- */
   function intro(){
     var meta;
@@ -274,6 +297,7 @@
       '<div class="eyebrow">' + (TOUR ? 'Your home tour' : (D.client ? 'Picked for ' + esc(D.client) : 'Homes picked for you')) + '</div>' +
       '<h1>' + esc(D.title || (TOUR ? 'Here\'s the plan for today' : 'A few homes I think you\'ll love')) + '</h1>' +
       (homes.length ? '<div class="meta">' + meta + '</div>' : '') +
+      (TOUR ? calButton() : '') +
       (D.note ? '<div class="note"><img src="' + AGENT.photo + '" alt="' + AGENT.name + '"><p>' + esc(D.note) + '<span class="sig">' + AGENT.name + ' · ' + AGENT.phoneText + '</span></p></div>' : '') +
       routeAll + '</div></section>';
   }

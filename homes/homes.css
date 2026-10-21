@@ -52,6 +52,11 @@ p{margin:0}
 .note p{font-family:var(--serif);font-size:19px;line-height:1.45;color:var(--body)}
 .note .sig{display:block;margin-top:6px;font-family:var(--sans);font-size:13px;font-weight:700;color:var(--muted)}
 .route-all{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.cal-pick{align-self:flex-start}
+.cal-pick summary{list-style:none}
+.cal-pick summary::-webkit-details-marker{display:none}
+.cal-menu{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+@media (max-width:520px){.cal-pick{align-self:stretch}.cal-pick summary{width:100%}.cal-menu .btn{flex:1 1 calc(50% - 5px)}}
 
 /* ---------- Listing card ---------- */
 .list{display:flex;flex-direction:column;padding-bottom:clamp(40px,6vw,72px)}
@@ -257,7 +262,7 @@ footer .wrap{display:flex;flex-direction:column;align-items:center;gap:14px;text
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 @media print{
-  .top .btn,.actions,.route-all,.sample-flag,.react-btns,.react-note{display:none!important}
+  .top .btn,.actions,.route-all,.cal-pick,.sample-flag,.react-btns,.react-note{display:none!important}
   .home{break-inside:avoid}
 }
 
