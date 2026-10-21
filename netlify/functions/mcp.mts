@@ -41,6 +41,9 @@ async function handle(msg: Rpc) {
 
 export default async (req: Request) => {
   if (req.method !== "POST") return new Response(null, { status: 405, headers: { allow: "POST" } })
+  // Browsers on other sites can't drive this endpoint (Claude calls it server-to-server)
+  const from = req.headers.get("origin")
+  if (from && !["https://claude.ai", "https://claude.com", origin(req)].includes(from)) return reply({ error: "forbidden origin" }, 403)
   if (!(await authorized(req))) {
     return reply({ error: "unauthorized" }, 401, {
       "www-authenticate": `Bearer resource_metadata="${origin(req)}/.well-known/oauth-protected-resource/mcp"`,

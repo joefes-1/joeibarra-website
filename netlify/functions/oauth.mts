@@ -126,6 +126,8 @@ export default async (req: Request) => {
 
   if (path === "/oauth/token" && req.method === "POST") {
     const p = await formOrJson(req), s = store()
+    // Unknown client: 401 invalid_client makes Claude register again
+    if (p.client_id && !(await getClient(p.client_id))) return oauthError("invalid_client", "Unknown client", 401)
     if (p.grant_type === "authorization_code") {
       const key = `codes/${sha(p.code || "")}`
       const rec = (await s.get(key, { type: "json" })) as { client_id: string; redirect_uri: string; challenge: string; exp: number } | null

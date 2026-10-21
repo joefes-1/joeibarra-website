@@ -219,6 +219,9 @@
 
       (expired.length ? '<details class="expired"><summary>Expired pages (' + expired.length + ')</summary><div class="pages">' +
         expired.map(function(p){ return pageCard(p, counts[p.page]); }).join('') + '</div></details>' : '') +
+      '<section class="panel"><div class="panel-head"><h2>Claude &amp; Follow Up Boss</h2></div>' +
+        '<p class="muted">Claude signs in to your Follow Up Boss connection with this password. If a device is lost or you just want to cut it off, disconnect it here; Claude will ask for the password again next time.</p>' +
+        '<div><button class="btn btn-soft" id="disconnect-claude" type="button">Disconnect Claude</button></div></section>' +
       (removed.length ? '<details class="expired removed"><summary>Removed pages (' + removed.length + ')</summary><div class="pages">' +
         removed.map(function(p){ return pageCard(p, null, removedAt[p.page].at); }).join('') + '</div></details>' : '');
 
@@ -306,6 +309,15 @@
       body: JSON.stringify({action:action, items:items})})
       .then(function(res){ if(!res.ok) throw new Error(res.status); setTimeout(function(){ load(current); }, 200); })
       .catch(function(){ btn.disabled = false; rows.forEach(function(li){ li.classList.remove('leaving'); }); alert('That didn’t go through. Try again.'); });
+  });
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('#disconnect-claude'); if(!b) return;
+    if(!confirm('Disconnect Claude from your Follow Up Boss? It will need your password to connect again.')) return;
+    b.disabled = true;
+    fetch('/api/admin', {method:'POST', cache:'no-store', headers:{'Content-Type':'application/json', Authorization:'Bearer ' + current},
+      body: JSON.stringify({action:'disconnect-claude'})})
+      .then(function(res){ b.textContent = res.ok ? 'Disconnected' : 'Didn\u2019t work, try again'; if(!res.ok) b.disabled = false; })
+      .catch(function(){ b.disabled = false; b.textContent = 'Didn\u2019t work, try again'; });
   });
   signout.addEventListener('click', function(){ set(KEY, null); current = null; showLogin(); });
 
