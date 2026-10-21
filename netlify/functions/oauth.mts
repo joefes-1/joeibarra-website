@@ -64,7 +64,7 @@ button{margin-top:14px;width:100%;border:0;border-radius:999px;background:var(--
 </form></main></body></html>`, {
     status: error ? 401 : 200,
     headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-frame-options": "DENY",
-               "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'" },
+               "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; form-action 'self' ${ALLOWED_REDIRECTS.map((u) => new URL(u).origin).join(" ")}; frame-ancestors 'none'` },
   })
 }
 

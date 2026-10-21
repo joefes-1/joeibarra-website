@@ -64,6 +64,8 @@ const verifier = randomBytes(40).toString('base64url'), challenge = createHash('
 const q = new URLSearchParams({ response_type: 'code', client_id, redirect_uri: CB, code_challenge: challenge, code_challenge_method: 'S256', state: 'xyz', resource: B + '/mcp' })
 r = await oauth(new Request(B + '/oauth/authorize?' + q))
 check(r.status === 200 && (await r.text()).includes('Admin password'), 'sign-in page asks for the admin password')
+check(/form-action 'self' https:\/\/claude\.ai https:\/\/claude\.com;/.test(r.headers.get('content-security-policy') || ''),
+  'sign-in page is allowed to hand off to Claude after the password (browsers block the redirect otherwise)')
 r = await oauth(new Request(B + '/oauth/authorize?' + new URLSearchParams({ ...Object.fromEntries(q), redirect_uri: 'https://evil.example/cb' })))
 check(r.status === 400 && !r.headers.get('location'), 'unregistered redirect never redirects')
 r = await oauth(new Request(B + '/oauth/authorize?' + new URLSearchParams({ ...Object.fromEntries(q), code_challenge_method: 'plain' })))
