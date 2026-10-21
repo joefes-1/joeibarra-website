@@ -130,6 +130,28 @@
    ]
   },
   {
+   "page": "lily-kirschemann-tour",
+   "path": "/homes/lily-kirschemann-tour",
+   "mode": "tour",
+   "client": "Lily",
+   "title": "Here's the plan for Saturday",
+   "created": "2026-10-21",
+   "date": "2026-10-24",
+   "lastAdded": null,
+   "expires": "2026-10-27",
+   "listings": [
+    {
+     "id": "26915837",
+     "address": "14647 Red Hill Ave",
+     "city": "Tustin, CA 92780",
+     "price": 719900,
+     "photo": "https://ssl.cdn-redfin.com/photo/40/bigphoto/837/26915837_0.jpg",
+     "added": null,
+     "time": "11:00"
+    }
+   ]
+  },
+  {
    "page": "lily-kirschemann",
    "path": "/homes/lily-kirschemann",
    "mode": "showcase",
