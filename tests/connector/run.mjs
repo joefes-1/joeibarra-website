@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url)), root = path.resolve(here, '../..')
 const out = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'conn-'))
-for (const f of ['oauth', 'mcp', 'admin', 'leads']) {
+for (const f of ['oauth', 'mcp', 'admin', 'leads', 'reactions']) {
   execFileSync('npx', ['--yes', 'esbuild@0.24.0', `netlify/functions/${f}.mts`, '--bundle', '--platform=node', '--format=esm',
     `--alias:@netlify/blobs=${path.join(here, 'fake-blobs.mjs')}`, `--outfile=${path.join(out, f + '.mjs')}`, '--log-level=warning'], { cwd: root, stdio: 'inherit' })
 }
@@ -193,6 +193,39 @@ globalThis.__leadsMode = true
 r = await L('?limit=1'); d = await r.json()
 check(!d.requested.includes(1249), 'clearing the request removes it from the Leads tab')
 globalThis.__leadsMode = false
+
+// Client tour notes -> FUB notes (page fubId comes from the built directory, never from the browser)
+const { default: reactions } = await import(path.join(out, 'reactions.mjs'))
+const dirPages = JSON.parse(fs.readFileSync(path.join(root, 'netlify/data/client-pages.json'), 'utf8')).pages
+const tourPg = dirPages.find((p) => p.mode === 'tour' && p.fubId), showPg = dirPages.find((p) => p.mode === 'showcase')
+const tourHome = tourPg.listings[0]
+const react = (body) => reactions(new Request(B + '/api/reactions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }))
+const fubNotes = () => calls.filter((c) => c.method === 'POST' && c.path === '/v1/notes')
+calls.length = 0
+await react({ page: tourPg.page, home: tourHome.id, r: 'love', note: '' })
+check(fubNotes().length === 0, 'tour reaction with no note: nothing sent to FUB')
+r = await react({ page: tourPg.page, home: tourHome.id, r: 'love', note: 'Love the patio!' })
+let n = fubNotes()
+check(r.status === 200 && n.length === 1 && n[0].body.personId === tourPg.fubId && n[0].body.subject === 'Tour note: ' + tourHome.address
+  && n[0].body.body.includes('"Love the patio!"') && n[0].body.body.includes('Loved it') && n[0].body.body.includes('https://joeibarra.com' + tourPg.path)
+  && !/\(\d{3}\)|DRE/.test(n[0].body.body), 'tour note goes to the client\'s FUB profile (subject, note, reaction, page link; no agent info)')
+await react({ page: tourPg.page, home: tourHome.id, r: 'pass', note: 'Love the patio!' })
+check(fubNotes().length === 1, 'same note saved again (reaction changed): no duplicate FUB note')
+await react({ page: tourPg.page, home: tourHome.id, r: 'pass', note: 'Kitchen felt small' })
+n = fubNotes()
+check(n.length === 2 && n[1].body.body.startsWith('Updated note from') && n[1].body.body.includes('Not for them'), 'changed note: a new FUB note marked as updated')
+r = await reactions(new Request(B + '/api/reactions?page=' + tourPg.page))
+d = await r.json()
+check(d.reactions[tourHome.id].note === 'Kitchen felt small' && !('fubNote' in d.reactions[tourHome.id]), 'page still gets the note back (internal FUB field hidden)')
+await react({ page: tourPg.page, home: 'not-a-real-home', r: 'love', note: 'hi' })
+await react({ page: showPg.page, home: showPg.listings[0].id, r: 'love', note: 'Showcase note' })
+check(fubNotes().length === 2, 'no FUB note for unknown homes or showcase pages')
+ENV.FUB_API_KEY = ''
+r = await react({ page: tourPg.page, home: tourHome.id, r: 'love', note: 'FUB is down' })
+check(r.status === 200 && (await r.json()).reaction.note === 'FUB is down', 'reaction still saves when FUB fails')
+ENV.FUB_API_KEY = 'fubkey'
+r = await react({ page: tourPg.page, home: tourHome.id, r: 'love', note: 'FUB is down' })
+check(fubNotes().length === 3, 'a note that failed to reach FUB is retried on the next save')
 
 globalThis.fetch = realFetch
 fs.rmSync(out, { recursive: true, force: true })

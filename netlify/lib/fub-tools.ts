@@ -36,6 +36,11 @@ async function fub(path: string, init: { method?: string; query?: Record<string,
   return data
 }
 
+// Add a note to a FUB contact (used by /api/reactions for client tour notes). Add-only, like everything here.
+export async function addFubNote(personId: number, subject: string, body: string) {
+  return fub("/notes", { method: "POST", body: { personId, subject, body, isHtml: false } })
+}
+
 let meCache: { id: number; name: string } | null = null
 async function me() {
   if (!meCache) { const m = await fub("/me"); meCache = { id: m.id, name: m.name } }

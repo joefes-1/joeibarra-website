@@ -4,6 +4,8 @@
    window.HOMES = {
      mode:       "showcase" | "tour",
      page:       "dolce-ibarra",        // fixed id for saved reactions; matches the file name
+     fubId:      8050,                  // optional: client's Follow Up Boss person id. On tours, notes the
+                                        //   client leaves on a home are added to their FUB profile as notes
      client:     "Dolce",               // first name, used in headings and reaction badges
      created:    "2026-10-16",          // showcase: expires 30 days after this (or the newest `added`)
      expiresDays: 30,                   // optional override
@@ -32,11 +34,11 @@
   };
   var D = window.HOMES || {};
   var TOUR = D.mode === 'tour';
-  var REACT = !TOUR && !D.sample;            // Love it / Not for me buttons on real showcase pages
+  var REACT = !D.sample;                     // Love it / Not for me buttons on real showcase and tour pages
   // Joseph's own browser (signed in on /admin) can tap a home's number to pick it for the next buyer tour.
   // Clients never have this key, so they never see it; saving picks also needs the password on the server.
   var OWNER_KEY = (function(){ try{ return localStorage.getItem('joeibarra-admin-key') || ''; }catch(e){ return ''; } })();
-  var OWNER = REACT && !!OWNER_KEY;
+  var OWNER = REACT && !TOUR && !!OWNER_KEY;   // tour picks live on showcase pages only
   var PAGE = String(D.page || location.pathname.replace(/\/+$/, '').split('/').pop().replace(/\.html$/, '')).toLowerCase();
   var root = document.getElementById('app');
   var homes = (D.listings || []).slice();

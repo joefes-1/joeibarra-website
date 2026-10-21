@@ -47,7 +47,7 @@ export function readPages() {
     const added = listings.map(h => h.added).filter(Boolean).sort()
     pages.push({
       page: D.page || slug, path: `/homes/${slug}`, mode: D.mode === 'tour' ? 'tour' : 'showcase',
-      client: D.client || '', title: D.title || '', created: D.created || null, date: D.date || null,
+      client: D.client || '', fubId: Number.isInteger(D.fubId) ? D.fubId : null, title: D.title || '', created: D.created || null, date: D.date || null,
       lastAdded: added.length ? added[added.length - 1] : null, expires: expires(D), listings
     })
   }
