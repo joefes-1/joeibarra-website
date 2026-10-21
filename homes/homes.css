@@ -110,6 +110,10 @@ p{margin:0}
 
 /* ---------- Past picks: compact tile grid; each tile opens into the full card ---------- */
 .past-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.fresh-grid + .group-head{margin-top:8px}
+.tile.is-fresh{border:1.5px solid #8CC7A3;box-shadow:0 0 0 3px #EEF7F1}
+.tile-fresh{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;background:var(--green-tint);color:var(--green-deep);border-radius:999px;padding:2px 8px;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:2px}
+.tile-fresh::before{content:"";width:6px;height:6px;border-radius:50%;background:#2F9A5C}
 @media (max-width:640px){.past-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
 .tile{position:relative;border:1px solid var(--line);border-radius:16px;background:#fff;cursor:pointer;outline:none}
 .tile-photo{position:relative;border-radius:15px 15px 0 0;overflow:hidden;background:var(--cream)}

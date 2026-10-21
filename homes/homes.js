@@ -226,11 +226,11 @@
     if(h.sqft) bits.push(Number(h.sqft).toLocaleString('en-US') + ' sq ft');
     var photo = safeUrl(h.photo), kind = statusKind(h);
     var drop = typeof h.was === 'number' && typeof h.price === 'number' && h.price < h.was;
-    return '<article class="tile reveal' + (kind ? ' is-' + kind : '') + '"' + (REACT ? ' data-home="' + h._id + '"' : '') + ' tabindex="0" aria-label="' + esc(h.address) + ', ' + money(h.price) + '. Show details">' +
+    return '<article class="tile reveal' + (h.added ? ' is-fresh' : '') + (kind ? ' is-' + kind : '') + '"' + (REACT ? ' data-home="' + h._id + '"' : '') + ' tabindex="0" aria-label="' + esc(h.address) + ', ' + money(h.price) + '. Show details">' +
       '<div class="tile-photo">' + (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy">' : '') + '<span class="tile-num">' + h._num + '</span>' +
         (kind ? '<span class="tile-status ' + kind + '">' + esc(h.status) + '</span>' : '') +
         (REACT ? '<span class="react-badge" hidden></span>' : '') + '</div>' +
-      '<div class="tile-body"><span class="tile-price">' + money(h.price) + (drop ? '<span class="tile-drop">Price drop</span>' : '') + '</span><span class="tile-addr">' + esc(h.address) + '</span>' +
+      '<div class="tile-body">' + (h.added ? '<span class="tile-fresh">Fresh pick</span>' : '') + '<span class="tile-price">' + money(h.price) + (drop ? '<span class="tile-drop">Price drop</span>' : '') + '</span><span class="tile-addr">' + esc(h.address) + '</span>' +
         '<span class="tile-specs">' + bits.join(' · ') + '</span><span class="tile-more">See details</span></div>' +
       '<div class="tile-pop"><button class="tile-close" type="button">Close</button>' + card(h, i, {inPop:true}) + '</div>' +
     '</article>';
@@ -272,8 +272,8 @@
       routeAll + '</div></section>';
   }
 
-  // Showcase order: homes with an `added` stamp (sent after the link went out) float to the top,
-  // newest batch first, each under a dated header. Originals become the "Past picks" tile grid.
+  // Showcase: every home is a tile in a grid. Homes with an `added` stamp (sent after the link went out)
+  // float to the top, newest batch first, each under a dated "Fresh picks" header; originals follow as "Past picks".
   function showcaseList(){
     var keys = [], byKey = {};
     homes.forEach(function(h){ var k = h.added || ''; if(!byKey[k]){ byKey[k] = []; keys.push(k); } byKey[k].push(h); });
@@ -285,7 +285,8 @@
 
     var html = '', n = 0;
     keys.forEach(function(k){
-      if(!hasFresh){ byKey[k].forEach(function(h){ html += card(h, n++); }); return; }
+      // Every home is a compact tile; the full card pops up on hover (computer) or opens on tap (phone).
+      if(!hasFresh){ html += '<div class="past-grid">'; byKey[k].forEach(function(h){ html += tile(h, n++); }); html += '</div>'; return; }
       var stamp;
       if(k){
         // show the time when it helps tell batches apart (two adds that day, or added the day the link was sent)
@@ -296,13 +297,9 @@
       }
       html += '<div class="group-head reveal' + (k ? ' is-fresh' : '') + '"><span class="eyebrow">' + (k ? 'Fresh picks' : 'Past picks') + '</span>' +
               (stamp ? '<span class="stamp">' + stamp + '</span>' : '') + '</div>';
-      if(k){
-        byKey[k].forEach(function(h){ html += card(h, n++); });
-      } else {
-        html += '<div class="past-grid">';
-        byKey[k].forEach(function(h){ html += tile(h, n++); });
-        html += '</div>';
-      }
+      html += '<div class="past-grid' + (k ? ' fresh-grid' : '') + '">';
+      byKey[k].forEach(function(h){ html += tile(h, n++); });
+      html += '</div>';
     });
     return html;
   }

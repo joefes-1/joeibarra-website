@@ -110,7 +110,9 @@ async def fresh_picks(browser, base):
     want = ['# FRESH PICKS Added Tue, Oct 20 at 4:40 PM', '5 Fresh Ave', '# FRESH PICKS Added Tue, Oct 20 at 9:15 AM', '4 Fresh Ave',
             '# FRESH PICKS Added Sun, Oct 18', '3 Fresh Ave', '# PAST PICKS Sent Fri, Oct 16', '1 Original Ln', '2 Original Ln']
     check(order == want, f'fresh-pick order wrong:\n    got  {order}\n    want {want}')
-    check(await p.evaluate("document.querySelectorAll('.past-grid .tile').length") == 2, 'originals should be 2 past-pick tiles')
+    check(await p.evaluate("document.querySelectorAll('.past-grid:not(.fresh-grid) .tile').length") == 2, 'originals should be 2 past-pick tiles')
+    check(await p.evaluate("document.querySelectorAll('#app > * .home:not(.tile-pop .home), #app .home:not(.tile-pop .home)').length") == 0, 'no big cards on a showcase: every home is a tile')
+    check(await p.evaluate("document.querySelectorAll('.fresh-grid .tile.is-fresh .tile-fresh').length") == 3, 'fresh picks are tiles with a Fresh pick tag')
     check(await p.evaluate("document.querySelectorAll('.fresh-pill').length") == 3, 'each fresh pick should have a Fresh pick tag')
     # numbers stay with the house: order sent (1-2 originals, then 3, 4, 5 as added), not display order
     nums_js = """[...document.querySelectorAll('#app .home:not(.tile-pop .home), #app .tile')].map(e=>
@@ -183,9 +185,11 @@ async def edge_cases(browser, base):
 async def reactions(browser, base):
     print('Reactions: love, note, edit, undo keeps note, grey-out, error rollback, saved for the next viewer')
     api = FakeApi()
-    p = await open_page(browser, base, '/tests/fixtures/fresh.html', dt.datetime(2026, 10, 21, 10, 0), api=api)
-    F = '.home.is-fresh >> nth=0'
-    card = p.locator(F)
+    # every home is a tile now: open the first fresh pick like a phone tap, then react inside its card
+    p = await open_page(browser, base, '/tests/fixtures/fresh.html', dt.datetime(2026, 10, 21, 10, 0), device='phone', api=api)
+    t0 = p.locator('.tile.is-fresh >> nth=0')
+    await t0.locator('.tile-photo').click(); await p.wait_for_timeout(300)
+    card = t0.locator('.tile-pop .home')
     check(await card.locator('.react-note').is_hidden(), 'note box should be hidden before a tap')
     await card.locator('.react-btn[data-r=love]').click(); await p.wait_for_timeout(150)
     check(await card.locator('.react-note').is_visible(), 'note box should appear after Love it')
@@ -208,12 +212,13 @@ async def reactions(browser, base):
     await p.context.close()
     # next visitor (Joseph) sees it
     p = await open_page(browser, base, '/tests/fixtures/fresh.html', dt.datetime(2026, 10, 21, 10, 0), api=api)
-    check(await p.locator('.home.is-fresh >> nth=0').get_attribute('class') and 'rx-pass' in await p.locator('.home.is-fresh >> nth=0').get_attribute('class'),
+    check('rx-pass' in (await p.locator('.tile.is-fresh >> nth=0').get_attribute('class') or ''),
           'a reaction should show for the next person who opens the page')
     await p.context.close()
     # save fails -> rolls back and shows the error
-    p = await open_page(browser, base, '/tests/fixtures/fresh.html', dt.datetime(2026, 10, 21, 10, 0), api=FakeApi(fail=True))
-    c = p.locator('.home.is-fresh >> nth=0')
+    p = await open_page(browser, base, '/tests/fixtures/fresh.html', dt.datetime(2026, 10, 21, 10, 0), device='phone', api=FakeApi(fail=True))
+    await p.locator('.tile.is-fresh >> nth=0 >> .tile-photo').click(); await p.wait_for_timeout(300)
+    c = p.locator('.tile.is-fresh >> nth=0 >> .tile-pop .home')
     await c.locator('.react-btn[data-r=love]').click(); await p.wait_for_timeout(200)
     check(await c.locator('.react-err').is_visible(), 'failed save should show the error message')
     check(await c.locator('.react-btn[data-r=love]').get_attribute('aria-pressed') == 'false', 'failed save should undo the button')
@@ -465,7 +470,7 @@ async def updates(browser, base):
     check(oh == ['Open house Sun, Oct 18, 1:30 to 4 PM · Sat, Oct 24, 11 AM to 2 PM'], f'open houses should drop past ones and read cleanly, got {oh}')
     tags = await p.evaluate("[...document.querySelectorAll('.price-tag')].map(e=>e.textContent)")
     check(sorted(tags) == ['Price drop Oct 17', 'Price up'], f'price change tags wrong, got {tags}')
-    was = await p.evaluate("document.querySelector('.tile-pop .price-was').textContent")
+    was = await p.evaluate("[...document.querySelectorAll('.tile-pop .price-was')].map(e=>e.textContent).find(t=>t!=='$990,000')")
     check(was == '$1,250,000', f'old price should show struck through, got {was}')
     flags = await p.evaluate("[...document.querySelectorAll('.tile-status')].map(e=>e.textContent.toLowerCase())")
     check(flags == ['pending', 'sold'], f'past-pick tiles should flag pending/sold, got {flags}')
@@ -501,13 +506,14 @@ async def deep_link(browser, base):
     await p.wait_for_timeout(400)
     check(await p.evaluate(f"document.querySelector('.tile[data-home=\"{target}\"]').classList.contains('open')"), 'deep link should open the past pick on a phone')
     await p.context.close()
-    # fresh pick: highlighted
+    # fresh picks are tiles too: their card pops open the same way
     p = await open_page(browser, base, '/tests/fixtures/fresh.html', when)
-    fresh = await p.evaluate("document.querySelector('#app .home.is-fresh').dataset.home")
+    fresh = await p.evaluate("document.querySelector('.tile.is-fresh').dataset.home")
     await p.context.close()
     p = await open_page(browser, base, '/tests/fixtures/fresh.html#h-' + fresh, when)
     await p.wait_for_timeout(400)
-    check(await p.evaluate(f"document.querySelector('#app .home[data-home=\"{fresh}\"]').classList.contains('spotlight')"), 'deep link to a fresh pick should highlight it')
+    vis = await p.evaluate(f"getComputedStyle(document.querySelector('.tile[data-home=\"{fresh}\"] .tile-pop')).visibility")
+    check(vis == 'visible', f'deep link to a fresh pick should open its card, got {vis}')
     check(not p.errors, f'deep link script errors: {p.errors}')
     await p.context.close()
 
@@ -544,21 +550,23 @@ async def tour_picks(browser, base):
     # someone with a fake/old password saved in their browser: the server says no, so nothing unlocks
     pg = await owner_page(password_ok=False)
     check(not await pg.evaluate("document.documentElement.classList.contains('owner')"), 'a wrong saved password must not unlock tour picks')
-    await pg.locator('#app .home .badge').first.click(force=True); await pg.wait_for_timeout(300)
+    await pg.locator('.tile .tile-num').first.click(force=True); await pg.wait_for_timeout(300)
     check(await pg.locator('.picked').count() == 0 and await pg.locator('.pick-bar').count() == 0, 'without the real password, tapping a number does nothing')
     await pg.context.close()
 
     pg = await owner_page()
     check(await pg.evaluate("document.documentElement.classList.contains('owner')"), 'Joseph (password confirmed) gets tour picks')
     check(await pg.locator('.pick-bar').is_hidden(), 'no bar or hint until something is picked')
-    fresh = pg.locator('#app .home.is-fresh').first
+    fresh = pg.locator('.tile.is-fresh').first
     fid = await fresh.get_attribute('data-home')
-    await fresh.locator('.badge').click(); await pg.wait_for_timeout(600)
+    await fresh.focus(); await pg.wait_for_timeout(400)          # keyboard focus opens the card like hover
+    await fresh.locator('.tile-pop .badge').click(); await pg.wait_for_timeout(600)
+    await pg.mouse.move(5, 5); await pg.evaluate("document.activeElement && document.activeElement.blur()"); await pg.wait_for_timeout(300)
     check(await fresh.evaluate("e => e.classList.contains('picked')"), 'tapping a number should highlight that home')
     check(pg.posts and pg.posts[-1] == ('Bearer test-password', {'action': 'tour-picks', 'page': 'test-fresh', 'homes': [fid]}),
           f'picks should save with the admin password, got {pg.posts}')
     check(pg.url.endswith('/tests/fixtures/fresh.html') and len(pg.context.pages) == 1, 'tapping the number should not open the listing')
-    tile = pg.locator('.tile').first
+    tile = pg.locator('.tile:not(.is-fresh)').first
     tid = await tile.get_attribute('data-home')
     await tile.hover(); await pg.wait_for_timeout(400)            # on a computer the past pick pops open on hover...
     await tile.locator('.tile-pop .badge').click(); await pg.wait_for_timeout(600)   # ...and its number is right there
@@ -568,7 +576,8 @@ async def tour_picks(browser, base):
     bar = await pg.inner_text('.pick-bar')
     check('#1' in bar and '#5' in bar, f'bar should list picks by home number, got {bar!r}')
     check(set(pg.posts[-1][1]['homes']) == {fid, tid}, f'both picks should save, got {pg.posts[-1]}')
-    await fresh.locator('.badge').click(); await pg.wait_for_timeout(600)
+    await fresh.focus(); await pg.wait_for_timeout(400)          # keyboard focus opens the card like hover
+    await fresh.locator('.tile-pop .badge').click(); await pg.wait_for_timeout(600)
     check(pg.posts[-1][1]['homes'] == [tid], f'tapping again should un-pick, got {pg.posts[-1]}')
     await pg.locator('.pick-clear').click(); await pg.wait_for_timeout(600)
     check(pg.posts[-1][1]['homes'] == [] and await pg.locator('.picked').count() == 0, 'Clear should drop every pick')
