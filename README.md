@@ -48,3 +48,14 @@ A scheduled Claude task checks every home on active client showcase pages once a
 (pending/sold get flagged on the card and tile) and `openHouses` (past ones hide themselves),
 then sets the page's `checked` date. Updates never change `created`/`added`, so they don't
 extend a page's 30 days.
+
+## Claude ↔ Follow Up Boss connector
+`https://joeibarra.com/mcp` is a private MCP server Joseph adds to Claude as a custom connector.
+- Sign-in: OAuth 2.1 (PKCE S256 + dynamic registration, Claude callback URLs only) where the
+  login step is the admin password (`netlify/functions/oauth.mts`, `netlify/lib/connector-auth.ts`).
+  Tokens are stored hashed in the Blobs store `connector`; /admin has "Disconnect Claude".
+- Tools (`netlify/lib/fub-tools.ts`): find_contacts, get_contact, contact_properties, recent_activity,
+  my_tasks, my_appointments (read) and add_note, create_appointment, create_task (add only).
+  No editing, deleting or sending texts/emails. Times are Pacific.
+- Needs `FUB_API_KEY` in Netlify env (Functions scope). Optional `FUB_SYSTEM`/`FUB_SYSTEM_KEY`.
+- Tests: `node tests/connector/run.mjs` (also run by `python3 tests/run.py`).

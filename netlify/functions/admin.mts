@@ -10,6 +10,7 @@ import { getStore } from "@netlify/blobs"
 import type { Config } from "@netlify/functions"
 import { createHash, timingSafeEqual } from "node:crypto"
 import directory from "../data/client-pages.json" with { type: "json" }
+import { revokeAll } from "../lib/connector-auth.ts"
 
 const json = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "cache-control": "no-store" } })
@@ -36,6 +37,8 @@ export default async (req: Request) => {
     const page = String(body?.page || ""), action = String(body?.action || "")
     // Client pages ask this before turning on Joseph-only tools (tour picks): 200 only with the right password.
     if (action === "check") return json({ ok: true })
+    // Signs Claude out of the Follow Up Boss connector everywhere (it has to sign in again with the password)
+    if (action === "disconnect-claude") { await revokeAll(); return json({ ok: true }) }
     const known = (p: string) => directory.pages.some((d) => d.page === p)
 
     // Hide / unhide reactions in the feed: items [{ page, home, at }]. A hidden reaction comes back

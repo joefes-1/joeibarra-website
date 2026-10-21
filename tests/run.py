@@ -553,11 +553,19 @@ async def tour_picks(browser, base):
     await pg.context.close()
 
 
+async def connector(browser, base):
+    print('Follow Up Boss connector: sign-in (admin password + PKCE), /mcp, tools add-only (node tests/connector/run.mjs)')
+    r = subprocess.run(['node', os.path.join(ROOT, 'tests/connector/run.mjs')], capture_output=True, text=True, cwd=ROOT)
+    for line in r.stdout.splitlines():
+        if 'FAIL' in line: print(line)
+    check(r.returncode == 0, 'connector tests failed:\n' + (r.stdout + r.stderr)[-1500:])
+
+
 async def main():
     base = serve()
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
-        for suite in (real_pages, fresh_picks, tours, edge_cases, updates, reactions, tiles, deep_link, tour_picks, removal, directory, admin):
+        for suite in (real_pages, fresh_picks, tours, edge_cases, updates, reactions, tiles, deep_link, tour_picks, connector, removal, directory, admin):
             await suite(browser, base)
         await browser.close()
     print('\n%d checks passed, %d failed' % (PASSES, len(FAILS)))
