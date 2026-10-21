@@ -264,6 +264,17 @@ async def directory(browser, base):
     print('Admin directory: up to date with homes/*.html, expiry dates match the pages')
     r = subprocess.run(['node', os.path.join(ROOT, 'scripts', 'build-directory.mjs'), '--check'], capture_output=True, text=True)
     check(r.returncode == 0, 'netlify/data/client-pages.json is out of date: run node scripts/build-directory.mjs')
+    print('Link previews: every client page has og tags from its data (title, date, first stop, photo)')
+    r = subprocess.run(['node', os.path.join(ROOT, 'scripts', 'build-previews.mjs'), '--check'], capture_output=True, text=True)
+    check(r.returncode == 0, 'link previews are out of date: run node scripts/build-previews.mjs')
+    for f in glob.glob(os.path.join(ROOT, 'homes', '*.html')):
+        html = open(f).read()
+        check(html.count('<!-- preview:start -->') == 1 and 'property="og:title"' in html and 'property="og:url" content="https://joeibarra.com/homes/' in html,
+              f'{os.path.basename(f)} should have exactly one link-preview block')
+        check('.html"' not in html.split('<!-- preview:start -->')[1].split('<!-- preview:end -->')[0], f'{os.path.basename(f)} preview url should not end in .html')
+    tour = open(os.path.join(ROOT, 'homes', 'dolce-ibarra-tour.html')).read()
+    check('content="Dolce\'s home tour, Sat Oct 17"' in tour and 'content="4 homes starting at 10am, first stop 20977 E Canyon Ridge Lane"' in tour
+          and 'og:image" content="https://ssl.cdn-redfin.com/photo/45/bigphoto/396/WS26120396_0.jpg"' in tour, 'tour preview: client, date, stop count, first stop + its photo')
     pages = json.load(open(os.path.join(ROOT, 'netlify', 'data', 'client-pages.json')))['pages']
     files = {os.path.basename(f)[:-5] for f in glob.glob(os.path.join(ROOT, 'homes', '*.html'))
              if 'sample: true' not in open(f).read()}
