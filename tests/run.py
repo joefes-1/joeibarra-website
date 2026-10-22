@@ -195,8 +195,35 @@ async def tours(browser, base):
     for f in glob.glob(os.path.join(ROOT, 'homes', '*-tour.html')):
         for t in re.findall(r'\btime:\s*"([^"]*)"', open(f).read()):
             check(re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', t), f'{os.path.basename(f)}: stop time "{t}" should be HH:MM, 24-hour')
+    print('Tours: cancelled tour + status file reminders check')
+    p = await open_page(browser, base, '/tests/fixtures/tour-cancelled.html', dt.datetime(2026, 10, 16, 18, 0))
+    t = await text(p)
+    check('this tour was cancelled' in t and not await p.evaluate("!!document.querySelector('.cal-pick, .home, .react')"),
+          'cancelled tour: "This tour was cancelled" page, no stops, no calendar button, no reactions')
+    check(await p.evaluate("[...document.querySelectorAll('a')].some(a=>a.getAttribute('href')==='/homes/lily-kirschemann')"), 'cancelled tour still links to the homes page')
+    await p.context.close()
+    r = subprocess.run(['node', '-e', '''
+      import("./scripts/build-previews.mjs").then(m => {
+        const D = {mode:"tour", page:"x-tour", client:"X", date:"2026-11-07", confirmed:true, cancelled:true,
+                   listings:[{address:"1 A St", city:"Tustin, CA", mls:"TST1", time:"9:30"}]}
+        console.log(JSON.stringify({ics: m.calendar(D, "x-tour"), st: JSON.parse(m.tourStatus(D, "x-tour"))}))
+      })'''], capture_output=True, text=True, cwd=ROOT)
+    out = json.loads(r.stdout or '{}')
+    check(out.get('ics') is None and out.get('st', {}).get('cancelled') is True and out['st']['stops'][0]['time'] == '09:30',
+          f'cancelled tour: no calendar file; status file says cancelled with clean times ({r.stderr[:200]})')
+    for f in glob.glob(os.path.join(ROOT, 'homes', '*-tour*.html')):
+        slug = os.path.basename(f)[:-5]
+        sp = os.path.join(ROOT, 'homes', slug + '.status.json')
+        check(os.path.exists(sp), f'{slug}: has a status file for reminders')
+        if os.path.exists(sp):
+            st = json.load(open(sp)); raw = open(sp).read().lower()
+            check(st['page'] == slug and all(k in st for k in ('date', 'confirmed', 'cancelled', 'stops')), f'{slug}.status.json has page/date/confirmed/cancelled/stops')
+            check(not re.search(r'agent|\bdre\b|\(\d{3}\)|@', raw), f'{slug}.status.json has no listing agent or contact info')
+    lily = json.load(open(os.path.join(ROOT, 'homes', 'lily-kirschemann-tour.status.json')))
+    check(lily['confirmed'] and lily['date'] == '2026-10-24' and lily['stops'][0]['mls'] == '26915837' and lily['stops'][0]['time'] == '11:00',
+          'Lily tour status: confirmed, Oct 24, Red Hill at 11:00')
     print('Tours: "See all your homes" link to the client\'s homes page')
-    for f in glob.glob(os.path.join(ROOT, 'homes', '*-tour.html')):
+    for f in glob.glob(os.path.join(ROOT, 'homes', '*-tour*.html')):
         m = re.search(r'homesPage:\s*"([^"]+)"', open(f).read())
         check(m and os.path.exists(os.path.join(ROOT, 'homes', m.group(1) + '.html')), f'{os.path.basename(f)} should link to an existing homes page')
     p = await open_page(browser, base, '/homes/lily-kirschemann-tour.html', dt.datetime(2026, 10, 22, 9, 0))

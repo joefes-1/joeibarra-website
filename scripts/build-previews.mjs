@@ -1,8 +1,10 @@
 // Adds link-preview tags (what iMessage, Slack, etc. show when a page link is texted) to every
 // homes/*.html page, built from its window.HOMES block. The tags sit between the
 // <!-- preview:start --> / <!-- preview:end --> markers in <head> and are rewritten each run.
-// Also writes homes/<page>.ics for every tour (the "Add to my calendar" button on the page),
-// and deletes .ics files whose tour page is gone.
+// Also writes homes/<page>.ics for every tour (the "Add to my calendar" button on the page), and
+// homes/<page>.status.json for every tour: the plain facts (date, confirmed, cancelled, stops + times)
+// that scheduled reminders check right before they ping Joseph. Files whose tour is gone are deleted.
+// Listing agent info is never in either file.
 // Runs on every Netlify deploy (netlify.toml) and in tests/run.py (--check fails if stale).
 // Run by hand with: node scripts/build-previews.mjs
 import fs from 'node:fs'
@@ -38,7 +40,7 @@ export function preview(D, slug) {
   if (D.mode === 'tour') {
     const stops = L.filter(h => h.time).sort((a, b) => a.time.localeCompare(b.time))
     const first = stops[0] || L[0]
-    title = `${who} home tour${D.date ? ', ' + niceDate(D.date) : ''}`
+    title = `${who} home tour${D.date ? ', ' + niceDate(D.date) : ''}${D.cancelled ? ' (cancelled)' : ''}`
     desc = `${homes(L.length)}${first?.time ? ' starting at ' + niceTime(first.time) : ''}${first?.address ? ', first stop ' + first.address : ''}`
     photo = first?.photo
   } else {
@@ -84,7 +86,7 @@ const fold = line => { const out = []; let cur = '', bytes = 0
 
 export function calendar(D, slug) {
   const L = withTimes(D.listings)
-  if (D.mode !== 'tour' || !/^\d{4}-\d\d-\d\d$/.test(D.date || '') || !L.length || !L[0].time) return null
+  if (D.mode !== 'tour' || D.cancelled || !/^\d{4}-\d\d-\d\d$/.test(D.date || '') || !L.length || !L[0].time) return null
   const start = L[0].time, end = addMin(L[L.length - 1].time || start, 30)
   const where = h => [h.address, h.city].filter(Boolean).join(', ')
   const url = `${SITE}/homes/${slug}`
@@ -104,20 +106,35 @@ export function calendar(D, slug) {
   return lines.map(fold).join('\r\n') + '\r\n'
 }
 
+// What a scheduled reminder needs to confirm the tour is still on as planned
+export function tourStatus(D, slug) {
+  if (D.mode !== 'tour' || D.sample) return null
+  return JSON.stringify({
+    page: slug, client: D.client || '', date: D.date || null,
+    confirmed: !!D.confirmed, cancelled: !!D.cancelled,
+    stops: withTimes(D.listings).map((h, i) => ({ num: i + 1, address: h.address || '', city: h.city || '', mls: h.mls || '', time: h.time || null }))
+  }, null, 1) + '\n'
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const check = process.argv.includes('--check'), stale = [], keep = new Set()
   for (const { file, slug, D } of loadAll()) {
     const p = path.join(root, file), html = fs.readFileSync(p, 'utf8'), next = withPreview(html, D, slug)
     if (next !== html) { if (check) stale.push(file); else fs.writeFileSync(p, next) }
+    const st = tourStatus(D, slug)
+    if (st) {
+      const sp = path.join(root, 'homes', slug + '.status.json'); keep.add(slug + '.status.json')
+      if (!(fs.existsSync(sp) && fs.readFileSync(sp, 'utf8') === st)) { if (check) stale.push('homes/' + slug + '.status.json'); else fs.writeFileSync(sp, st) }
+    }
     const ics = calendar(D, slug)
     if (!ics) continue
     const ip = path.join(root, 'homes', slug + '.ics'); keep.add(slug + '.ics')
     if (fs.existsSync(ip) && fs.readFileSync(ip, 'utf8') === ics) continue
     if (check) stale.push('homes/' + slug + '.ics'); else fs.writeFileSync(ip, ics)
   }
-  for (const f of fs.readdirSync(path.join(root, 'homes')).filter(f => f.endsWith('.ics') && !keep.has(f))) {
+  for (const f of fs.readdirSync(path.join(root, 'homes')).filter(f => (f.endsWith('.ics') || f.endsWith('.status.json')) && !keep.has(f))) {
     if (check) stale.push('homes/' + f + ' (page is gone)'); else fs.unlinkSync(path.join(root, 'homes', f))
   }
-  if (check && stale.length) { console.error('Link previews / calendar files out of date: ' + stale.join(', ')); process.exit(1) }
+  if (check && stale.length) { console.error('Link previews / calendar / tour status files out of date: ' + stale.join(', ')); process.exit(1) }
   console.log(check ? 'link previews + calendar files up to date' : 'link previews + calendar files written')
 }

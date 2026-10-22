@@ -11,6 +11,8 @@
      expiresDays: 30,                   // optional override
      date:       "2026-10-17",          // tour only: the tour day (page shuts off 2 days after)
      homesPage:  "dolce-ibarra",        // tour only: the client's homes page -> "See all your homes" link
+     confirmed:  true,                  // tour only: showings confirmed with the listing agents (drafts leave it off)
+     cancelled:  true,                  // tour only: the tour is off -> "This tour was cancelled" page, no calendar file
      sample:     true,                  // sample pages: banner, no expiry, no reactions
      title, note, area, whyLabel,
      checked:    "2026-10-18",          // showcase: day the daily refresh last checked prices/open houses
@@ -421,7 +423,10 @@
 
   // Shown instead of the page once it has expired, or after Joseph removes it from /admin.
   function renderClosed(removed){
-    var copy = removed
+    var copy = removed === 'cancelled'
+      ? {title:'Tour cancelled', eyebrow:'This tour was cancelled', h1:'This tour is off.',
+         lede:'If you added it to your calendar, you can delete it. Text me whenever you\'d like to set up a new time.'}
+      : removed
       ? {title:'Page no longer available', eyebrow:'This page is no longer available', h1:'Thanks for looking!',
          lede:'Text me if you\'d like an updated list of homes, or to set up a time to see some in person.'}
       : TOUR
@@ -434,7 +439,7 @@
       '<main><section class="intro"><div class="wrap"><div class="eyebrow">' + copy.eyebrow + '</div>' +
       '<h1>' + copy.h1 + '</h1>' +
       '<p class="lede">' + copy.lede + '</p>' +
-      '<div class="actions">' + textButton() + (!removed && HOMES_LINK ? homesButton() : '<a class="btn btn-ghost" href="/">Visit my site</a>') + '</div>' +
+      '<div class="actions">' + textButton() + ((!removed || removed === 'cancelled') && HOMES_LINK ? homesButton() : '<a class="btn btn-ghost" href="/">Visit my site</a>') + '</div>' +
       '</div></section></main>';
   }
 
@@ -724,6 +729,7 @@
 
   /* ---------- Go ---------- */
   validate();
+  if(TOUR && D.cancelled){ renderClosed('cancelled'); return; }
   var exp = expiresAt();
   if(exp && new Date() >= exp){ renderClosed(false); return; }
   renderPage();

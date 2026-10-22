@@ -1,0 +1,37 @@
+{
+ "page": "dolce-ibarra-tour",
+ "client": "Dolce",
+ "date": "2026-10-17",
+ "confirmed": false,
+ "cancelled": false,
+ "stops": [
+  {
+   "num": 1,
+   "address": "20977 E Canyon Ridge Lane",
+   "city": "Diamond Bar, CA 91789",
+   "mls": "WS26120396",
+   "time": "10:00"
+  },
+  {
+   "num": 2,
+   "address": "20774 Timberline Lane",
+   "city": "Diamond Bar, CA 91789",
+   "mls": "TR26201462",
+   "time": "10:35"
+  },
+  {
+   "num": 3,
+   "address": "21138 Valleyview Drive",
+   "city": "Walnut, CA 91789",
+   "mls": "WS26223791",
+   "time": "11:20"
+  },
+  {
+   "num": 4,
+   "address": "1215 Vassar Lane",
+   "city": "Walnut, CA 91789",
+   "mls": "CV26223436",
+   "time": "12:00"
+  }
+ ]
+}

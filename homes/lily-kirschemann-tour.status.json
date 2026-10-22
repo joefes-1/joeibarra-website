@@ -1,0 +1,16 @@
+{
+ "page": "lily-kirschemann-tour",
+ "client": "Lily",
+ "date": "2026-10-24",
+ "confirmed": true,
+ "cancelled": false,
+ "stops": [
+  {
+   "num": 1,
+   "address": "14647 Red Hill Ave",
+   "city": "Tustin, CA 92780",
+   "mls": "26915837",
+   "time": "11:00"
+  }
+ ]
+}
