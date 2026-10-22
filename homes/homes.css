@@ -52,6 +52,8 @@ p{margin:0}
 .note p{font-family:var(--serif);font-size:19px;line-height:1.45;color:var(--body)}
 .note .sig{display:block;margin-top:6px;font-family:var(--sans);font-size:13px;font-weight:700;color:var(--muted)}
 .route-all{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.zillow-tip{display:flex;align-items:baseline;gap:8px;margin:0;font-size:14px;color:var(--muted)}
+.zillow-tip span{color:#C2475F;font-size:15px}
 .cal-pick{align-self:flex-start}
 .cal-pick summary{list-style:none}
 .cal-pick summary::-webkit-details-marker{display:none}

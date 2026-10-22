@@ -310,6 +310,7 @@
       (homes.length ? '<div class="meta">' + meta + '</div>' : '') +
       (TOUR ? calButton() : '') +
       (D.note ? '<div class="note"><img src="' + AGENT.photo + '" alt="' + AGENT.name + '"><p>' + esc(D.note) + '<span class="sig">' + AGENT.name + ' · ' + AGENT.phoneText + '</span></p></div>' : '') +
+      (!TOUR && !D.sample && D.fubId ? '<p class="zillow-tip"><span aria-hidden="true">♡</span>Tap the heart on any home on Zillow and it\u2019ll show up here the next morning.</p>' : '') +
       routeAll + '</div></section>';
   }
 
