@@ -4,8 +4,8 @@
    window.HOMES = {
      mode:       "showcase" | "tour",
      page:       "dolce-ibarra",        // fixed id for saved reactions; matches the file name
-     fubId:      8050,                  // optional: client's Follow Up Boss person id. On tours, notes the
-                                        //   client leaves on a home are added to their FUB profile as notes
+     fubId:      8050,                  // optional: client's Follow Up Boss person id. Notes the client
+                                        //   leaves on a home (tour or homes page) are added to their FUB profile
      client:     "Dolce",               // first name, used in headings and reaction badges
      created:    "2026-10-16",          // showcase: expires 30 days after this (or the newest `added`)
      expiresDays: 30,                   // optional override

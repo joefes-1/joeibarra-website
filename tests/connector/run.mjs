@@ -197,7 +197,8 @@ globalThis.__leadsMode = false
 // Client tour notes -> FUB notes (page fubId comes from the built directory, never from the browser)
 const { default: reactions } = await import(path.join(out, 'reactions.mjs'))
 const dirPages = JSON.parse(fs.readFileSync(path.join(root, 'netlify/data/client-pages.json'), 'utf8')).pages
-const tourPg = dirPages.find((p) => p.mode === 'tour' && p.fubId), showPg = dirPages.find((p) => p.mode === 'showcase')
+const tourPg = dirPages.find((p) => p.mode === 'tour' && p.fubId)
+const showPg = dirPages.find((p) => p.mode === 'showcase' && p.fubId), noFubPg = dirPages.find((p) => !p.fubId)
 const tourHome = tourPg.listings[0]
 const react = (body) => reactions(new Request(B + '/api/reactions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }))
 const fubNotes = () => calls.filter((c) => c.method === 'POST' && c.path === '/v1/notes')
@@ -218,14 +219,18 @@ r = await reactions(new Request(B + '/api/reactions?page=' + tourPg.page))
 d = await r.json()
 check(d.reactions[tourHome.id].note === 'Kitchen felt small' && !('fubNote' in d.reactions[tourHome.id]), 'page still gets the note back (internal FUB field hidden)')
 await react({ page: tourPg.page, home: 'not-a-real-home', r: 'love', note: 'hi' })
-await react({ page: showPg.page, home: showPg.listings[0].id, r: 'love', note: 'Showcase note' })
-check(fubNotes().length === 2, 'no FUB note for unknown homes or showcase pages')
+await react({ page: noFubPg.page, home: noFubPg.listings[0].id, r: 'love', note: 'No FUB link' })
+check(fubNotes().length === 2, 'no FUB note for unknown homes or pages without a fubId')
+await react({ page: showPg.page, home: showPg.listings[0].id, r: 'pass', note: 'Too far from work' })
+n = fubNotes()
+check(n.length === 3 && n[2].body.personId === showPg.fubId && n[2].body.subject === 'Home note: ' + showPg.listings[0].address
+  && n[2].body.body.includes('(homes page)') && n[2].body.body.includes('"Too far from work"'), 'homes-page note goes to FUB as a Home note')
 ENV.FUB_API_KEY = ''
 r = await react({ page: tourPg.page, home: tourHome.id, r: 'love', note: 'FUB is down' })
 check(r.status === 200 && (await r.json()).reaction.note === 'FUB is down', 'reaction still saves when FUB fails')
 ENV.FUB_API_KEY = 'fubkey'
 r = await react({ page: tourPg.page, home: tourHome.id, r: 'love', note: 'FUB is down' })
-check(fubNotes().length === 3, 'a note that failed to reach FUB is retried on the next save')
+check(fubNotes().length === 4, 'a note that failed to reach FUB is retried on the next save')
 
 globalThis.fetch = realFetch
 fs.rmSync(out, { recursive: true, force: true })

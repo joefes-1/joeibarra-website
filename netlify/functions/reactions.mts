@@ -4,9 +4,9 @@
 //      tourPicks: home ids Joseph tapped for the next buyer tour (only shown to him; saving needs his password via /api/admin)
 // POST /api/reactions { page, home, r, note }      -> saves one home's reaction (r "" + no note = clear)
 // One blob per page+home.
-// Tour pages with a fubId (set in the page data, read here from the built directory, never from the
-// browser): when the client writes or changes a note on a home, it's added to their Follow Up Boss
-// profile as a note. Reactions with no note, and re-saves of the same note, don't create FUB notes.
+// Pages with a fubId (tours and homes pages; set in the page data, read here from the built directory,
+// never from the browser): when the client writes or changes a note on a home, it's added to their
+// Follow Up Boss profile as a note. Reactions with no note, and re-saves of the same note, don't.
 import { getStore } from "@netlify/blobs"
 import type { Config } from "@netlify/functions"
 import directory from "../data/client-pages.json" with { type: "json" }
@@ -22,15 +22,17 @@ const tourDay = (ymd?: string | null) => ymd
 // Sends the note to FUB; returns true if it went through. Never throws (the reaction is saved either way).
 async function noteToFub(page: string, home: string, r: string, note: string, updated: boolean) {
   const p = PAGES.get(page)
-  if (!p || p.mode !== "tour" || !p.fubId) return false
+  if (!p || !p.fubId) return false
+  const tour = p.mode === "tour"
   const h = p.listings.find((l) => l.id === home)
   if (!h) return false
   const where = [h.address, h.city].filter(Boolean).join(", ")
   const who = p.client || "Client"
-  const body = `${updated ? "Updated note" : "Note"} from ${who} on ${where}${p.date ? ` (tour ${tourDay(p.date)})` : ""}:\n\n` +
+  const from = tour ? (p.date ? ` (tour ${tourDay(p.date)})` : " (tour)") : " (homes page)"
+  const body = `${updated ? "Updated note" : "Note"} from ${who} on ${where}${from}:\n\n` +
     `"${note}"\n\nReaction: ${LABEL[r] ?? r}\nhttps://joeibarra.com${p.path}`
   try {
-    await addFubNote(p.fubId, `Tour note: ${h.address}`, body)
+    await addFubNote(p.fubId, `${tour ? "Tour note" : "Home note"}: ${h.address}`, body)
     return true
   } catch (e) {
     console.error("FUB note failed", page, home, e)
