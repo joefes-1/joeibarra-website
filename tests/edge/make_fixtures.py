@@ -126,8 +126,8 @@ F['tst-tour-ten'] = tour('tst-tour-ten', '2026-11-01', ['10:00', '10:30', '11:00
 F['tst-tour-ten']['listings'][0].update(address='1 Calle Ñandú #5; Bldg, A 🏡', city='Huntington Beach, CA')
 F['tst-tour-dststart'] = tour('tst-tour-dststart', '2027-03-14', ['10:00', '11:00'])
 F['tst-tour-unsorted'] = tour('tst-tour-unsorted', '2026-10-24', ['11:00', '09:30', '10:15'])
-F['tst-tour-late'] = tour('tst-tour-late', '2026-10-24', ['21:30', '23:00', '23:50'])
 F['tst-tour-early'] = tour('tst-tour-early', '2026-10-24', ['07:30', '08:15'])
+F['tst-tour-evening'] = tour('tst-tour-evening', '2026-10-24', ['19:30', '20:15', '21:00'])   # latest real case: last stop starts at 9pm
 F['tst-tour-nine'] = tour('tst-tour-nine', '2026-10-24', ['09:00', '09:45'])
 F['tst-tour-notime'] = tour('tst-tour-notime', '2026-10-24', ['10:00', None, '11:00'])
 F['tst-tour-firstnotime'] = tour('tst-tour-firstnotime', '2026-10-24', [None, '10:30'])

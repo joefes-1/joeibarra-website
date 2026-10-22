@@ -124,8 +124,7 @@ async def all_fixtures(browser, base):
             t = await text(p)
             check(not p.errors, f'{name} [{device}] script errors: {p.errors}')
             xss = await ev(p, 'window.__xss || null')
-            if name != 'tst-xss-tour':
-                check(not xss, f'{name} [{device}] injected script ran: {xss}')
+            check(not xss, f'{name} [{device}] injected script ran: {xss}')
             wide = await ev(p, 'document.documentElement.scrollWidth - innerWidth')
             if wide > 0: overflow.setdefault(name, []).append(f'{device}+{wide}px')
             bad = sorted(set(re.findall(r'undefined|invalid date|\bnan\b|\[object object\]', t)))
@@ -155,10 +154,7 @@ async def escaping(browser, base):
             await p.wait_for_timeout(200)
             xss = await ev(p, 'window.__xss || null')
             injected = await ev(p, "document.querySelectorAll('#app img[src=\"x\"], #app svg[onload]').length")
-            if name == 'tst-xss-tour':
-                bug(not xss and not injected, f'tour stop `time` is put into the page unescaped (clock()): script ran {xss} ({device})')
-            else:
-                check(not xss and not injected, f'{name} [{device}]: injected markup rendered/ran: {xss} {injected}')
+            check(not xss and not injected, f'{name} [{device}]: injected markup rendered/ran: {xss} {injected}')
             await p.context.close()
     p = await open_page(browser, base, 'tst-xss')
     hrefs = await ev(p, "[...document.querySelectorAll('#app a, #app img')].map(a=>a.getAttribute('href')||a.getAttribute('src'))")
@@ -309,7 +305,7 @@ async def removal(browser, base):
 
 # ---------------------------------------------------------------- tours
 async def tours(browser, base):
-    print('Tours: calendar links, ordering, DST, late/early, missing times, homes link')
+    print('Tours: calendar links, ordering, DST, evening/early, missing times, homes link')
     async def gcal(name, when=None):
         p = await open_page(browser, base, name, when or dt.datetime(2026, 10, 21, 9, 0))
         g = await ev(p, "(document.querySelector('.cal-menu a[href*=\"calendar.google\"]')||{}).href || ''")
@@ -324,9 +320,13 @@ async def tours(browser, base):
     wp = await ev(p, "decodeURIComponent((document.querySelector('.route-all a').href.match(/waypoints=([^&]*)/)||[])[1]||'')")
     check(wp.count('|') == 8, f'whole-route link has 9 waypoints + destination: {wp.count("|")+1} waypoints')
     await p.context.close()
-    p, g, ics = await gcal('tst-tour-late')
-    bug(re.search(r'dates=(\d+T\d+)/(\d+T\d+)', g) and re.search(r'dates=(\d+T\d+)/(\d+T\d+)', g).group(2) > re.search(r'dates=(\d+T\d+)/(\d+T\d+)', g).group(1),
-        f'evening tour (last stop 11:50pm): Google event ends before it starts ({re.search(r"dates=[^&]*", g).group(0)})')
+    # Tours never start after 9pm or run past midnight (Joseph): the latest real case is a last stop at 9pm
+    p, g, ics = await gcal('tst-tour-evening')
+    check('dates=20261024T193000/20261024T213000' in g, f'evening tour (7:30pm, last stop 9pm): Google event 7:30-9:30pm same day ({re.search(r"dates=[^&]*", g).group(0) if g else g})')
+    await p.context.close()
+    p = await open_page(browser, base, 'tst-tour-evening', dt.datetime(2026, 10, 24, 21, 10))
+    st = await ev(p, "[...document.querySelectorAll('.home')].map(e=>e.classList.contains('now')?'now':e.classList.contains('done')?'done':'-')")
+    check(st == ['done', 'done', 'now'], f'evening tour at 9:10pm: last stop (9pm) is "now": {st}')
     await p.context.close()
     p, g, ics = await gcal('tst-tour-unsorted')
     m = re.search(r'dates=(\d+T\d+)/(\d+T\d+)', g)
@@ -337,10 +337,10 @@ async def tours(browser, base):
     bug(st == ['-', 'now', '-'], f'out-of-order stops: at 9:40 the 9:30 stop (2nd card) should be "now", got {st}')
     await p.context.close()
     p, g, ics = await gcal('tst-tour-badtime')
-    bug('dates=20261024T093000/' in g, f'stop time typed "9:30": Google link dates are malformed ({re.search(r"dates=[^&]*", g).group(0) if g else g})')
+    check('dates=20261024T093000/20261024T104500' in g, f'stop time typed "9:30": Google link dates read as 9:30am ({re.search(r"dates=[^&]*", g).group(0) if g else g})')
     await p.context.close()
     p = await open_page(browser, base, 'tst-tour-badtime', dt.datetime(2026, 10, 24, 9, 35))
-    bug(await p.locator('.home.now').count() == 1, 'stop time "9:30": live "Now" highlight never appears (Invalid Date)')
+    check(await p.locator('.home.now').count() == 1, 'stop time "9:30": live "Now" highlight appears')
     await p.context.close()
     p, g, ics = await gcal('tst-tour-pagemismatch')
     bug(ics.endswith('/homes/tst-tour-pagemismatch.ics'), f'page id differs from file name: Apple/Outlook button points at {ics.split("/")[-1]} but the build writes tst-tour-pagemismatch.ics (404)')
