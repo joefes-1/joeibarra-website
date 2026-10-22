@@ -10,6 +10,7 @@
      created:    "2026-10-16",          // showcase: expires 30 days after this (or the newest `added`)
      expiresDays: 30,                   // optional override
      date:       "2026-10-17",          // tour only: the tour day (page shuts off 2 days after)
+     homesPage:  "dolce-ibarra",        // tour only: the client's homes page -> "See all your homes" link
      sample:     true,                  // sample pages: banner, no expiry, no reactions
      title, note, area, whyLabel,
      checked:    "2026-10-18",          // showcase: day the daily refresh last checked prices/open houses
@@ -78,6 +79,7 @@
     out:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>',
     msg:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>',
     car:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14M6 17v2M18 17v2M4 13l2-5a2 2 0 0 1 2-1.3h8a2 2 0 0 1 2 1.3l2 5v4H4z"/><circle cx="8" cy="14" r=".6"/><circle cx="16" cy="14" r=".6"/></svg>',
+    grid:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
     cal:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
     route:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h7"/></svg>'
   };
@@ -122,6 +124,9 @@
     return '<header class="top"><div class="wrap"><a class="brand" href="/">' + AGENT.name + '<small>REALTOR® · First Team Real Estate</small></a>' +
       (withCall ? '<a class="btn btn-solid" href="tel:' + AGENT.phone + '">Call or text</a>' : '') + '</div></header>';
   }
+  // Tours link back to the client's homes page (every home they've been sent), on the page and after it wraps up
+  var HOMES_LINK = TOUR && /^[a-z0-9-]{1,80}$/.test(String(D.homesPage || '')) ? '/homes/' + D.homesPage : '';
+  function homesButton(){ return HOMES_LINK ? '<a class="btn btn-ghost" href="' + HOMES_LINK + '">' + ICON.grid + 'See all your homes</a>' : ''; }
   function textButton(){ return '<a class="btn btn-solid" href="sms:' + AGENT.phone + '">' + ICON.msg + 'Text ' + AGENT.phoneText + '</a>'; }
   function footer(){
     return '<footer><div class="wrap"><div class="logos"><img src="/images/moein-group.png" alt="Moein Group Real Estate"><i aria-hidden="true"></i><img src="/images/first-team.jpg" alt="First Team Real Estate"></div>' +
@@ -293,11 +298,12 @@
       meta = '<span><strong>' + homes.length + (homes.length === 1 ? ' home' : ' homes') + '</strong> to look through</span>' + (D.area ? '<span>' + esc(D.area) + '</span>' : '') +
         (D.checked ? '<span class="checked">Prices &amp; open houses updated ' + esc(localDate(D.checked.slice(0, 10)).toLocaleDateString('en-US', {month:'short', day:'numeric'})) + '</span>' : '');
     }
-    var routeAll = '';
+    var routeAll = '', route = '';
     if(TOUR && homes.length > 1){
       var last = fullAddress(homes[homes.length - 1]), way = homes.slice(0, -1).map(fullAddress).join('|');
-      routeAll = '<div class="route-all"><a class="btn btn-ghost" href="https://www.google.com/maps/dir/?api=1&destination=' + enc(last) + '&waypoints=' + enc(way) + '&travelmode=driving" target="_blank" rel="noopener">' + ICON.route + 'See the whole route</a></div>';
+      route = '<a class="btn btn-ghost" href="https://www.google.com/maps/dir/?api=1&destination=' + enc(last) + '&waypoints=' + enc(way) + '&travelmode=driving" target="_blank" rel="noopener">' + ICON.route + 'See the whole route</a>';
     }
+    if(route || HOMES_LINK) routeAll = '<div class="route-all">' + route + homesButton() + '</div>';
     return '<section class="intro"><div class="wrap">' +
       '<div class="eyebrow">' + (TOUR ? 'Your home tour' : (D.client ? 'Picked for ' + esc(D.client) : 'Homes picked for you')) + '</div>' +
       '<h1>' + esc(D.title || (TOUR ? 'Here\'s the plan for today' : 'A few homes I think you\'ll love')) + '</h1>' +
@@ -388,7 +394,7 @@
       '<main><section class="intro"><div class="wrap"><div class="eyebrow">' + copy.eyebrow + '</div>' +
       '<h1>' + copy.h1 + '</h1>' +
       '<p class="lede">' + copy.lede + '</p>' +
-      '<div class="actions">' + textButton() + '<a class="btn btn-ghost" href="/">Visit my site</a></div>' +
+      '<div class="actions">' + textButton() + (!removed && HOMES_LINK ? homesButton() : '<a class="btn btn-ghost" href="/">Visit my site</a>') + '</div>' +
       '</div></section></main>';
   }
 
