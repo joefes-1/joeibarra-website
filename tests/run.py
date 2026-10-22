@@ -171,6 +171,26 @@ async def tours(browser, base):
     await p.wait_for_timeout(200)
     check('great yard' in await text(p), 'a tour note shows back on the page after saving')
     await p.context.close()
+    # Joseph (signed in on /admin on this device) sees reactions + notes but can't change them
+    api = FakeApi(); api.db['test-tour/TST50111'] = {'r': 'love', 'note': 'Love the yard', 'at': '2026-10-16T20:00:00Z'}
+    ctx = await browser.new_context(viewport={'width': 390, 'height': 844})
+    await ctx.add_init_script("localStorage.setItem('joeibarra-admin-key','test-password')")
+    p = await ctx.new_page(); posts = []
+    p.on('request', lambda r: posts.append(r.url) if r.method == 'POST' and '/api/reactions' in r.url else None)
+    await p.route('**/api/reactions**', api.handle)
+    await p.route('**/api/admin**', lambda r: r.fulfill(status=200, content_type='application/json', body='{"ok":true}'))
+    await p.route(lambda u: not u.startswith(base), lambda r: r.abort())
+    await p.clock.set_fixed_time(dt.datetime(2026, 10, 16, 18, 0))
+    await p.goto(base + '/tests/fixtures/tour.html'); await p.wait_for_timeout(400)
+    box = p.locator('.home >> nth=0').locator('.react')
+    t = (await box.inner_text()).lower()
+    check('love the yard' in t and 'view only' in t and "tess" in t, f'Joseph sees the client reaction + note, labeled view only (got {t!r})')
+    check(await box.locator('.react-btn[data-r=love]').get_attribute('aria-pressed') == 'true' and await box.locator('.react-btn[disabled]').count() == 2,
+          'reaction buttons show the client pick but are disabled for Joseph')
+    await box.locator('.react-btn[data-r=pass]').click(force=True); await p.wait_for_timeout(200)
+    check(not posts and await box.locator('.react-note').is_hidden() and await box.locator('.react-edit').count() == 0,
+          'Joseph tapping does nothing: no save, no note box, no Edit')
+    await ctx.close()
     p = await open_page(browser, base, '/tests/fixtures/tour-nodate.html')
     check(await p.evaluate("!document.querySelector('.cal-pick')"), 'no calendar button on a tour with no date')
     await p.context.close()

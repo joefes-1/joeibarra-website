@@ -39,6 +39,8 @@
   // Clients never have this key, so they never see it; saving picks also needs the password on the server.
   var OWNER_KEY = (function(){ try{ return localStorage.getItem('joeibarra-admin-key') || ''; }catch(e){ return ''; } })();
   var OWNER = REACT && !TOUR && !!OWNER_KEY;   // tour picks live on showcase pages only
+  // Joseph sees his clients' reactions and notes but can't change them (notes on tours also go to FUB).
+  var VIEW_ONLY = REACT && !!OWNER_KEY;
   var PAGE = String(D.page || location.pathname.replace(/\/+$/, '').split('/').pop().replace(/\.html$/, '')).toLowerCase();
   var root = document.getElementById('app');
   var homes = (D.listings || []).slice();
@@ -179,9 +181,10 @@
 
   function reactBlock(h){
     if(!REACT) return '';
-    return '<div class="react" data-home="' + h._id + '"><span class="react-q">What do you think?</span>' +
+    return '<div class="react' + (VIEW_ONLY ? ' view-only' : '') + '" data-home="' + h._id + '"><span class="react-q">' +
+        (VIEW_ONLY ? esc(D.client ? D.client + '\u2019s reaction' : 'Client reaction') + ' <small>View only</small>' : 'What do you think?') + '</span>' +
       '<div class="react-btns">' + ['love', 'pass'].map(function(k){
-        return '<button type="button" class="react-btn" data-r="' + k + '" aria-pressed="false"><span aria-hidden="true">' + REACTION[k].icon + '</span>' + REACTION[k].label + '</button>';
+        return '<button type="button" class="react-btn" data-r="' + k + '" aria-pressed="false"' + (VIEW_ONLY ? ' disabled' : '') + '><span aria-hidden="true">' + REACTION[k].icon + '</span>' + REACTION[k].label + '</button>';
       }).join('') + '</div>' +
       '<form class="react-note" hidden><input type="text" maxlength="300" placeholder="Want to tell me why? (optional)" aria-label="Note for Joseph"><button type="submit" class="btn btn-soft">Send</button></form>' +
       '<p class="react-said" hidden></p><p class="react-err" hidden>That didn’t save. Check your connection and try again.</p></div>';
@@ -424,11 +427,12 @@
         box.querySelectorAll('.react-btn').forEach(function(btn){ btn.setAttribute('aria-pressed', String(btn.dataset.r === s.r)); });
         var form = box.querySelector('.react-note'), input = form.querySelector('input'), said = box.querySelector('.react-said');
         // note box: always open while editing; otherwise only after Love it / Not for me, until a note is saved
-        form.hidden = editing ? false : (!s.r || !!s.note);
+        form.hidden = VIEW_ONLY ? true : editing ? false : (!s.r || !!s.note);
         if(document.activeElement !== input) input.value = s.note || '';
         said.hidden = !s.note || editing;
         if(s.note) said.innerHTML = '“' + esc(s.note) + '” <span>— ' + esc(D.client || 'You') +
-          (s.at ? ', ' + new Date(s.at).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '') + '</span> <button type="button" class="react-edit">Edit</button>';
+          (s.at ? ', ' + new Date(s.at).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '') + '</span>' +
+          (VIEW_ONLY ? '' : ' <button type="button" class="react-edit">Edit</button>');
       });
     }
     function save(id, r, note){
@@ -443,6 +447,7 @@
         .catch(function(){ if(mine !== seq[id]) return; state[id] = prev; paint(); errs.forEach(function(e){ e.hidden = false; }); });
     }
     document.addEventListener('click', function(e){
+      if(VIEW_ONLY) return;
       var btn = e.target.closest('.react-btn');
       if(btn){
         var id = btn.closest('.react').dataset.home, cur = state[id] || {};
@@ -456,7 +461,7 @@
       }
     });
     document.addEventListener('submit', function(e){
-      var form = e.target.closest('.react-note'); if(!form) return;
+      var form = e.target.closest('.react-note'); if(!form || VIEW_ONLY) return;
       e.preventDefault();
       var box = form.closest('.react'), id = box.dataset.home, input = form.querySelector('input');
       box.classList.remove('editing'); input.blur();
