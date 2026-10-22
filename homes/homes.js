@@ -55,13 +55,26 @@
   function apple(dest){ return 'https://maps.apple.com/?daddr=' + enc(dest) + '&dirflg=d'; }
   function sms(h){ return 'sms:' + AGENT.phone + '?&body=' + enc('Hi Joseph, about ' + (h.address || 'this home') + ': '); }
   function money(n){ return typeof n === 'number' ? '$' + n.toLocaleString('en-US') : esc(n); }
-  function clock(t){ if(!t) return ''; var p = t.split(':'), h = +p[0]; return (h % 12 || 12) + ':' + p[1] + ' ' + (h < 12 ? 'AM' : 'PM'); }
+  // Stop times are "HH:MM" (24h). Be forgiving about how they were typed ("9:30", "9:30 am", "21:15") and
+  // drop anything else, so a typo can't break the page, the calendar link or the "Now" highlight.
+  function normTime(t){
+    var m = /^\s*(\d{1,2}):(\d{2})\s*([ap])?\.?\s*m?\.?\s*$/i.exec(String(t == null ? '' : t));
+    if(!m) return '';
+    var h = +m[1], min = +m[2], ap = (m[3] || '').toLowerCase();
+    if(ap){ if(h < 1 || h > 12) return ''; h = h % 12 + (ap === 'p' ? 12 : 0); }
+    if(h > 23 || min > 59) return '';
+    return (h < 10 ? '0' : '') + h + ':' + m[2];
+  }
+  function clock(t){ t = normTime(t); if(!t) return ''; var p = t.split(':'), h = +p[0]; return (h % 12 || 12) + ':' + p[1] + ' ' + (h < 12 ? 'AM' : 'PM'); }
   function localDate(ymd, hm){ return new Date(ymd + 'T' + (hm || '00:00') + ':00'); }       // "2026-10-18", "14:20"
   function stampDate(s){ return localDate(s.slice(0, 10), s.length > 10 ? s.slice(11, 16) : null); }  // "2026-10-18[T14:20]"
   function dayLabel(s){ return stampDate(s).toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}); }
   function timeLabel(s){ return s.length > 10 ? clock(s.slice(11, 16)) : ''; }
   function homeId(h, i){ return String(h.mls || h.address || ('home-' + (i + 1))).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60); }
-  homes.forEach(function(h, i){ h._id = homeId(h, i); });
+  homes.forEach(function(h, i){
+    h._id = homeId(h, i);
+    if(h.time != null){ var nt = normTime(h.time); if(!nt && window.console) console.warn('[homes] ignoring bad time "' + h.time + '" on ' + h.address); h.time = nt; }
+  });
   // Each home keeps its number for good, so "#3" means the same house next week:
   // tours count stops in route order; showcases count in the order homes were sent
   // (originals in file order, then each fresh batch by its `added` stamp).

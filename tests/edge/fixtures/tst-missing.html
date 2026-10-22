@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow"><title>Test fixture</title><link rel="stylesheet" href="/homes/homes.css"></head>
+<body><div id="app"></div>
+<script>
+/* Fake client for tests/edge (edge-case fixture) */
+window.HOMES = {
+ "mode": "showcase",
+ "page": "tst-missing",
+ "client": "Mia",
+ "created": "2026-10-16",
+ "listings": [
+  {
+   "address": "1 Nophoto Rd",
+   "city": "Irvine, CA",
+   "mls": "TST1001",
+   "price": 800000,
+   "url": "https://www.zillow.com/homedetails/tst/1_zpid/"
+  },
+  {
+   "address": "2 Nourl Rd",
+   "mls": "TST1002",
+   "price": 810000,
+   "photo": "/images/willow.jpg"
+  },
+  {
+   "address": "3 Zillow Rd",
+   "mls": "TST1003",
+   "price": 820000,
+   "photo": "/images/el-paso.jpg",
+   "url": "https://www.zillow.com/homedetails/tst/3_zpid/"
+  },
+  {
+   "address": "4 Realscout Rd",
+   "mls": "TST1004",
+   "price": 830000,
+   "photo": "/images/mockingbird.jpg",
+   "url": "https://www.realscout.com/listing/tst4"
+  },
+  {
+   "address": "5 Strings Rd",
+   "mls": "TST1005",
+   "price": "$1.2M",
+   "sqft": "1,850",
+   "beds": 3,
+   "baths": 2.5,
+   "photo": "/images/baltimore.jpg"
+  },
+  {
+   "mls": "TST1006",
+   "price": 840000
+  },
+  {
+   "address": "7 Dupe Rd",
+   "price": 850000
+  },
+  {
+   "address": "7 Dupe Rd",
+   "price": 860000
+  }
+ ]
+};
+</script>
+<script src="/homes/homes.js"></script>
+</body></html>

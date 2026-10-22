@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow"><title>Test fixture</title><link rel="stylesheet" href="/homes/homes.css"></head>
+<body><div id="app"></div>
+<script>
+/* Fake client for tests/edge (edge-case fixture) */
+window.HOMES = {
+ "mode": "showcase",
+ "page": "tst-names",
+ "client": "D'Angelo José Zoë 🏡",
+ "fubId": 990001,
+ "created": "2026-10-16",
+ "title": "Homes for \"D'Angelo\" & family",
+ "area": "Huntington Beach & Seacliff",
+ "note": "Hi D'Angelo! Ça va? Here are a few 🏡 picks.",
+ "listings": [
+  {
+   "address": "1 O'Hare Ct",
+   "city": "Huntington Beach, CA 92648",
+   "mls": "TST0001",
+   "price": 910000,
+   "status": "For sale",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1501,
+   "year": 1990,
+   "photo": "/images/el-paso.jpg",
+   "url": "https://www.realscout.com/listing/tst1",
+   "why": "Great “curb” appeal & yard.",
+   "headsUp": "Listing agent: Agent Smith (714) 555-0199 agent.smith@example.com"
+  },
+  {
+   "address": "2 Calle Ñandú #5; Bldg, A",
+   "city": "Seacliff, CA",
+   "mls": "TST0002",
+   "price": 920000,
+   "status": "For sale",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1502,
+   "year": 1990,
+   "photo": "/images/mockingbird.jpg",
+   "url": "https://www.realscout.com/listing/tst2",
+   "why": "Listing agent: Agent Smith (714) 555-0199 agent.smith@example.com",
+   "saved": true
+  }
+ ]
+};
+</script>
+<script src="/homes/homes.js"></script>
+</body></html>

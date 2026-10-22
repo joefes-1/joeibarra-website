@@ -18,11 +18,22 @@ const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replac
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const niceDate = ymd => { const d = new Date(ymd + 'T12:00:00Z'); return `${DAYS[d.getUTCDay()]} ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}` }
+// Same forgiving rule as homes.js normTime: "9:30", "9:30 am", "21:15" -> "HH:MM"; anything else -> ''
+export function normTime(t) {
+  const m = /^\s*(\d{1,2}):(\d{2})\s*([ap])?\.?\s*m?\.?\s*$/i.exec(String(t ?? ''))
+  if (!m) return ''
+  let h = +m[1]; const ap = (m[3] || '').toLowerCase()
+  if (ap) { if (h < 1 || h > 12) return ''; h = h % 12 + (ap === 'p' ? 12 : 0) }
+  if (h > 23 || +m[2] > 59) return ''
+  return `${String(h).padStart(2, '0')}:${m[2]}`
+}
+// Listings with their stop times cleaned up (bad times dropped, never thrown on)
+const withTimes = L => (L || []).map(h => ({ ...h, time: normTime(h.time) }))
 const niceTime = hm => { const [h, m] = hm.split(':').map(Number); return `${h % 12 || 12}${m ? ':' + String(m).padStart(2, '0') : ''}${h < 12 ? 'am' : 'pm'}` }
 const homes = n => `${n} home${n === 1 ? '' : 's'}`
 
 export function preview(D, slug) {
-  const L = D.listings || [], who = D.client ? `${D.client}'s` : 'Your'
+  const L = withTimes(D.listings), who = D.client ? `${D.client}'s` : 'Your'
   let title, desc, photo
   if (D.mode === 'tour') {
     const stops = L.filter(h => h.time).sort((a, b) => a.time.localeCompare(b.time))
@@ -72,8 +83,8 @@ const fold = line => { const out = []; let cur = '', bytes = 0
   out.push(cur); return out.join('\r\n ') }
 
 export function calendar(D, slug) {
-  const L = D.listings || []
-  if (D.mode !== 'tour' || !D.date || !L.length || !L[0].time) return null
+  const L = withTimes(D.listings)
+  if (D.mode !== 'tour' || !/^\d{4}-\d\d-\d\d$/.test(D.date || '') || !L.length || !L[0].time) return null
   const start = L[0].time, end = addMin(L[L.length - 1].time || start, 30)
   const where = h => [h.address, h.city].filter(Boolean).join(', ')
   const url = `${SITE}/homes/${slug}`

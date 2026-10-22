@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow"><title>Test fixture</title><link rel="stylesheet" href="/homes/homes.css"></head>
+<body><div id="app"></div>
+<script>
+/* Fake client for tests/edge (edge-case fixture) */
+window.HOMES = {
+ "mode": "tour",
+ "page": "tst-tour-one",
+ "client": "Testy",
+ "fubId": 990010,
+ "created": "2026-10-21",
+ "date": "2026-10-24",
+ "homesPage": "tst-forty",
+ "listings": [
+  {
+   "address": "1 Testy Ln",
+   "city": "Huntington Beach, CA 92648",
+   "mls": "TST0001",
+   "price": 910000,
+   "status": "For sale",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1501,
+   "year": 1990,
+   "photo": "/images/el-paso.jpg",
+   "url": "https://www.realscout.com/listing/tst1",
+   "why": "Fake write-up for home 1.",
+   "time": "11:00",
+   "drive": "About 3 minutes."
+  }
+ ]
+};
+</script>
+<script src="/homes/homes.js"></script>
+</body></html>

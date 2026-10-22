@@ -191,6 +191,10 @@ async def tours(browser, base):
     check(not posts and await box.locator('.react-note').is_hidden() and await box.locator('.react-edit').count() == 0,
           'Joseph tapping does nothing: no save, no note box, no Edit')
     await ctx.close()
+    print('Tours: every stop time on a real tour page is written HH:MM (24h)')
+    for f in glob.glob(os.path.join(ROOT, 'homes', '*-tour.html')):
+        for t in re.findall(r'\btime:\s*"([^"]*)"', open(f).read()):
+            check(re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', t), f'{os.path.basename(f)}: stop time "{t}" should be HH:MM, 24-hour')
     print('Tours: "See all your homes" link to the client\'s homes page')
     for f in glob.glob(os.path.join(ROOT, 'homes', '*-tour.html')):
         m = re.search(r'homesPage:\s*"([^"]+)"', open(f).read())
