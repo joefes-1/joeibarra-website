@@ -133,8 +133,34 @@
       '<p class="legal">' + AGENT.name + ', REALTOR® · DRE #' + AGENT.dre + ' · First Team Real Estate · Moein Group. Listing information is deemed reliable but not guaranteed and should be independently verified.</p></div></footer>';
   }
   function mapButtons(dest){
-    return '<a class="btn btn-solid" href="' + gmaps(dest) + '" target="_blank" rel="noopener">' + ICON.pin + 'Google Maps</a>' +
-           '<a class="btn btn-ghost" href="' + apple(dest) + '" target="_blank" rel="noopener">' + ICON.pin + 'Apple Maps</a>';
+    return '<a class="btn btn-solid" data-map="google" href="' + gmaps(dest) + '" target="_blank" rel="noopener">' + ICON.pin + 'Google Maps</a>' +
+           '<a class="btn btn-ghost" data-map="apple" href="' + apple(dest) + '" target="_blank" rel="noopener">' + ICON.pin + 'Apple Maps</a>';
+  }
+  // Directions start from wherever the person is at the moment they tap: grab a fresh location (no cached
+  // fix) and pass it as the starting point. If location is off/denied/slow, the plain link opens and the map
+  // app picks the start itself. The new tab is opened right away so popup blockers don't stop it.
+  function withOrigin(href, kind, lat, lng){
+    var o = lat.toFixed(6) + ',' + lng.toFixed(6);
+    return kind === 'apple' ? href + '&saddr=' + o : href + '&origin=' + o;
+  }
+  function initMapLinks(){
+    document.addEventListener('click', function(e){
+      var a = e.target.closest && e.target.closest('a[data-map]');
+      if(!a || !navigator.geolocation || e.metaKey || e.ctrlKey || e.shiftKey) return;
+      e.preventDefault();
+      var href = a.getAttribute('href'), kind = a.dataset.map, done = false;
+      var win = null; try { win = window.open('', '_blank'); } catch(err){}
+      function go(url){
+        if(done) return; done = true;
+        if(win && !win.closed){ try { win.opener = null; win.location.replace(url); return; } catch(err){} }
+        location.href = url;
+      }
+      navigator.geolocation.getCurrentPosition(
+        function(pos){ go(withOrigin(href, kind, pos.coords.latitude, pos.coords.longitude)); },
+        function(){ go(href); },
+        {enableHighAccuracy: true, maximumAge: 0, timeout: 6000});
+      setTimeout(function(){ go(href); }, 7000);
+    });
   }
 
   /* ---------- Listing pieces ---------- */
@@ -688,6 +714,7 @@
   var exp = expiresAt();
   if(exp && new Date() >= exp){ renderClosed(false); return; }
   renderPage();
+  initMapLinks();
   loadStatus();
   initTiles();
   initLiveTour();

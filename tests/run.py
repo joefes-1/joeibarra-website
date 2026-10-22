@@ -217,6 +217,25 @@ async def tours(browser, base):
     p = await open_page(browser, base, '/homes/lily-kirschemann-tour.html', dt.datetime(2026, 10, 22, 9, 0))
     check(await p.evaluate("!document.querySelector('.zillow-tip')"), 'no Zillow tip on tour pages')
     await p.context.close()
+    print('Map buttons: directions start from where the person is when they tap')
+    for allow, kind in [(True, 'google'), (True, 'apple'), (False, 'google')]:
+        ctx = await browser.new_context(viewport={'width': 390, 'height': 844}, geolocation={'latitude': 33.6595, 'longitude': -117.9988},
+                                        permissions=['geolocation'] if allow else [])
+        urls = []
+        ctx.on('request', lambda r: urls.append(r.url) if ('google.com/maps' in r.url or 'maps.apple.com' in r.url) else None)
+        await ctx.route('**/api/reactions**', FakeApi().handle)
+        await ctx.route(lambda u: not u.startswith(base), lambda r: r.abort())
+        p = await ctx.new_page()
+        await p.clock.set_fixed_time(dt.datetime(2026, 10, 17, 9, 0))
+        await p.goto(base + '/tests/fixtures/tour.html'); await p.wait_for_timeout(300)
+        await p.click(f'.leg a[data-map={kind}]'); await p.wait_for_timeout(1500 if allow else 7600)
+        u = urls[-1] if urls else ''
+        start = ('saddr=' if kind == 'apple' else 'origin=') + '33.659500,-117.998800'
+        if allow:
+            check(start in u and '1%20Stop%20Rd' in u, f'{kind} map starts from the current location: {u}')
+        else:
+            check(u and 'origin=' not in u and '1%20Stop%20Rd' in u, f'location blocked: plain link still opens ({u})')
+        await ctx.close()
     p = await open_page(browser, base, '/tests/fixtures/tour-nodate.html')
     check(await p.evaluate("!document.querySelector('.cal-pick')"), 'no calendar button on a tour with no date')
     await p.context.close()
