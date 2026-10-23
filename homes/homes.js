@@ -492,7 +492,7 @@
       paint();
       var errs = document.querySelectorAll('.react[data-home="' + id + '"] .react-err');
       errs.forEach(function(e){ e.hidden = true; });
-      fetch('/api/reactions', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({page:PAGE, home:id, r:r, note:note})})
+      fetch('/api/reactions', {method:'POST', headers:{'Content-Type':'application/json'}, keepalive:true, body: JSON.stringify({page:PAGE, home:id, r:r, note:note})})
         .then(function(res){ if(!res.ok) throw new Error(res.status); return res.json(); })
         .then(function(d){ if(mine !== seq[id]) return; state[id] = d.reaction || undefined; paint(); })
         .catch(function(){ if(mine !== seq[id]) return; state[id] = prev; paint(); errs.forEach(function(e){ e.hidden = false; }); });
@@ -511,13 +511,32 @@
         var input = box.querySelector('.react-note input'); input.focus(); input.select();
       }
     });
+    // A typed note saves on Send, and also as soon as the client taps away, closes the home or leaves the
+    // page, so a note is never lost because they didn't hit Send. Same text is never sent twice.
+    function commitNote(input){
+      if(VIEW_ONLY || !input) return;
+      var box = input.closest('.react'); if(!box) return;
+      var id = box.dataset.home, cur = state[id] || {}, note = input.value.trim().slice(0, 300);
+      if(note === (cur.note || '')) { box.classList.remove('editing'); paint(); return; }
+      if(!note && !box.classList.contains('editing')) return;     // nothing typed; leave things as they were
+      box.classList.remove('editing');
+      save(id, cur.r || '', note);
+    }
     document.addEventListener('submit', function(e){
       var form = e.target.closest('.react-note'); if(!form || VIEW_ONLY) return;
       e.preventDefault();
-      var box = form.closest('.react'), id = box.dataset.home, input = form.querySelector('input');
-      box.classList.remove('editing'); input.blur();
-      save(id, (state[id] || {}).r || '', input.value.trim().slice(0, 300));
+      var input = form.querySelector('input');
+      commitNote(input); input.blur();
     });
+    document.addEventListener('focusout', function(e){
+      var input = e.target.closest && e.target.closest('.react-note input'); if(!input) return;
+      // tapping this note's own Send button: let submit handle it
+      if(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('.react-note') === input.closest('.react-note')) return;
+      commitNote(input);
+    });
+    function flushNotes(){ document.querySelectorAll('.react-note input').forEach(function(i){ if(i.value.trim()) commitNote(i); }); }
+    window.addEventListener('pagehide', flushNotes);
+    document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'hidden') flushNotes(); });
     paint();
   }
 

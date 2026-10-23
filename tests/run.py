@@ -195,6 +195,43 @@ async def tours(browser, base):
     for f in glob.glob(os.path.join(ROOT, 'homes', '*-tour.html')):
         for t in re.findall(r'\btime:\s*"([^"]*)"', open(f).read()):
             check(re.fullmatch(r'([01]\d|2[0-3]):[0-5]\d', t), f'{os.path.basename(f)}: stop time "{t}" should be HH:MM, 24-hour')
+    print('Notes save without hitting Send (tap away, close the home, leave the page), and never twice')
+    class CountApi(FakeApi):
+        def __init__(self): super().__init__(); self.posts = []
+        async def handle(self, route):
+            if route.request.method == 'POST': self.posts.append(json.loads(route.request.post_data))
+            return await super().handle(route)
+    async def fresh_card(api):
+        p = await open_page(browser, base, '/tests/fixtures/fresh.html', dt.datetime(2026, 10, 21, 10, 0), device='phone', api=api)
+        t0 = p.locator('.tile.is-fresh >> nth=0')
+        await t0.locator('.tile-photo').click(); await p.wait_for_timeout(300)
+        card = t0.locator('.tile-pop .home')
+        await card.locator('.react-btn[data-r=love]').click(); await p.wait_for_timeout(200)
+        return p, t0, card
+    api = CountApi(); p, t0, card = await fresh_card(api)
+    await card.locator('.react-note input').fill('Loved the patio')
+    await t0.locator('.tile-close').click(); await p.wait_for_timeout(300)
+    notes = [x['note'] for x in api.posts if x['note']]
+    check(notes == ['Loved the patio'], f'closing the home without Send saves the note once, got {notes}')
+    await p.context.close()
+    api = CountApi(); p, t0, card = await fresh_card(api)
+    await card.locator('.react-note input').fill('Kitchen too small')
+    await card.locator('.why').first.click(); await p.wait_for_timeout(300)
+    notes = [x['note'] for x in api.posts if x['note']]
+    check(notes == ['Kitchen too small'], f'tapping elsewhere saves the note once, got {notes}')
+    await p.context.close()
+    api = CountApi(); p, t0, card = await fresh_card(api)
+    await card.locator('.react-note input').fill('Great yard'); await card.locator('.react-note button').click(); await p.wait_for_timeout(300)
+    notes = [x['note'] for x in api.posts if x['note']]
+    check(notes == ['Great yard'], f'tapping Send saves the note exactly once, got {notes}')
+    await p.context.close()
+    api = CountApi(); p, t0, card = await fresh_card(api)
+    await card.locator('.react-note input').fill('Leaving now')
+    await p.evaluate("document.dispatchEvent(new Event('visibilitychange')); Object.defineProperty(document,'visibilityState',{value:'hidden'}); document.dispatchEvent(new Event('visibilitychange'))")
+    await p.wait_for_timeout(300)
+    notes = [x['note'] for x in api.posts if x['note']]
+    check(notes == ['Leaving now'], f'switching apps / leaving the page saves the typed note, got {notes}')
+    await p.context.close()
     print('Tours: cancelled tour + status file reminders check')
     p = await open_page(browser, base, '/tests/fixtures/tour-cancelled.html', dt.datetime(2026, 10, 16, 18, 0))
     t = await text(p)
