@@ -1,0 +1,28 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//joeibarra.com//Home tours//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:hiroki-baba-tour-2026-10-24@joeibarra.com
+DTSTAMP:20261023T070000Z
+DTSTART:20261024T170000Z
+DTEND:20261024T173000Z
+SUMMARY:Home tour with Joseph Ibarra
+LOCATION:9432 Warbler Ave\, Fountain Valley\, CA 92708
+DESCRIPTION:Showing details: https://joeibarra.com/homes/hiroki-baba-tour\n
+ \n1. 10am  9432 Warbler Ave\, Fountain Valley\, CA 92708\n\nJoseph Ibarra 
+ · (714) 507-5438
+URL:https://joeibarra.com/homes/hiroki-baba-tour
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Home tour today with Joseph Ibarra
+TRIGGER;VALUE=DATE-TIME:20261024T150000Z
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Home tour with Joseph Ibarra in 1 hour
+TRIGGER:-PT1H
+END:VALARM
+END:VEVENT
+END:VCALENDAR

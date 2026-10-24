@@ -1,0 +1,16 @@
+{
+ "page": "hiroki-baba-tour",
+ "client": "Hiroki",
+ "date": "2026-10-24",
+ "confirmed": true,
+ "cancelled": false,
+ "stops": [
+  {
+   "num": 1,
+   "address": "9432 Warbler Ave",
+   "city": "Fountain Valley, CA 92708",
+   "mls": "OC26222554",
+   "time": "10:00"
+  }
+ ]
+}

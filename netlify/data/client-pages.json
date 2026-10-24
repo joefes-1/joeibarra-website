@@ -133,6 +133,52 @@
    ]
   },
   {
+   "page": "hiroki-baba-tour",
+   "path": "/homes/hiroki-baba-tour",
+   "mode": "tour",
+   "client": "Hiroki",
+   "fubId": 8046,
+   "title": "Here's the plan for Saturday",
+   "created": "2026-10-23",
+   "date": "2026-10-24",
+   "lastAdded": null,
+   "expires": "2026-10-27",
+   "listings": [
+    {
+     "id": "OC26222554",
+     "address": "9432 Warbler Ave",
+     "city": "Fountain Valley, CA 92708",
+     "price": 999000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/554/OC26222554_0.jpg",
+     "added": null,
+     "time": "10:00"
+    }
+   ]
+  },
+  {
+   "page": "hiroki-baba",
+   "path": "/homes/hiroki-baba",
+   "mode": "showcase",
+   "client": "Hiroki",
+   "fubId": 8046,
+   "title": "Homes worth a look",
+   "created": "2026-10-23",
+   "date": null,
+   "lastAdded": null,
+   "expires": "2026-11-22",
+   "listings": [
+    {
+     "id": "OC26222554",
+     "address": "9432 Warbler Ave",
+     "city": "Fountain Valley, CA 92708",
+     "price": 999000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/554/OC26222554_0.jpg",
+     "added": null,
+     "time": null
+    }
+   ]
+  },
+  {
    "page": "lily-kirschemann-tour",
    "path": "/homes/lily-kirschemann-tour",
    "mode": "tour",
