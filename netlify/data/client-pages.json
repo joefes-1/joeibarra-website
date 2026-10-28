@@ -250,6 +250,65 @@
      "time": null
     }
    ]
+  },
+  {
+   "page": "ydey-herrera",
+   "path": "/homes/ydey-herrera",
+   "mode": "showcase",
+   "client": "Ydey",
+   "fubId": 5157,
+   "title": "A few homes worth a look",
+   "created": "2026-10-28",
+   "date": null,
+   "lastAdded": null,
+   "expires": "2026-11-27",
+   "listings": [
+    {
+     "id": "IV26142717",
+     "address": "710 Broadmoor Court",
+     "city": "Corona, CA 92882",
+     "price": 859999,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/717/IV26142717_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "TR26192176",
+     "address": "558 Calderone Drive",
+     "city": "Corona, CA 92879",
+     "price": 879888,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/176/TR26192176_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "PW26209540",
+     "address": "4167 Crooked Stick",
+     "city": "Corona, CA 92883",
+     "price": 899500,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/540/PW26209540_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "SW26186771",
+     "address": "4210 Havenridge Drive",
+     "city": "Corona, CA 92883",
+     "price": 910000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/771/SW26186771_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "IG26225094",
+     "address": "2832 Hillsten Road",
+     "city": "Corona, CA 92883",
+     "price": 885990,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/094/IG26225094_0.jpg",
+     "added": null,
+     "time": null
+    }
+   ]
   }
  ]
 }
