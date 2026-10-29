@@ -260,9 +260,27 @@
    "title": "A few homes worth a look",
    "created": "2026-10-28",
    "date": null,
-   "lastAdded": null,
+   "lastAdded": "2026-10-28T18:20",
    "expires": "2026-11-27",
    "listings": [
+    {
+     "id": "PW26203877",
+     "address": "837 S Reseda Street",
+     "city": "Anaheim, CA 92806",
+     "price": 859000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/877/PW26203877_0.jpg",
+     "added": "2026-10-28T18:20",
+     "time": null
+    },
+    {
+     "id": "OC26205058",
+     "address": "2211 E Romneya Drive",
+     "city": "Anaheim, CA 92806",
+     "price": 949000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/058/OC26205058_0.jpg",
+     "added": "2026-10-28T18:20",
+     "time": null
+    },
     {
      "id": "IV26142717",
      "address": "710 Broadmoor Court",
