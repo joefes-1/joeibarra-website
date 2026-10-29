@@ -252,6 +252,29 @@
    ]
   },
   {
+   "page": "smita",
+   "path": "/homes/smita",
+   "mode": "showcase",
+   "client": "Smita",
+   "fubId": 7629,
+   "title": "A few homes worth a look",
+   "created": "2026-10-29",
+   "date": null,
+   "lastAdded": null,
+   "expires": "2026-11-28",
+   "listings": [
+    {
+     "id": "TR26228003",
+     "address": "21116 Silver Cloud Drive",
+     "city": "Diamond Bar, CA 91765",
+     "price": 1175000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/003/TR26228003_0.jpg",
+     "added": null,
+     "time": null
+    }
+   ]
+  },
+  {
    "page": "ydey-herrera",
    "path": "/homes/ydey-herrera",
    "mode": "showcase",
