@@ -42,7 +42,8 @@
   // Clients never have this key, so they never see it; saving picks also needs the password on the server.
   var OWNER_KEY = (function(){ try{ return localStorage.getItem('joeibarra-admin-key') || ''; }catch(e){ return ''; } })();
   var OWNER = REACT && !TOUR && !!OWNER_KEY;   // tour picks live on showcase pages only
-  // Joseph sees his clients' reactions and notes but can't change them (notes on tours also go to FUB).
+  // Joseph sees his clients' reactions and notes but can't change them (notes on tours also go to FUB),
+  // except that he can mark a home Not for me for a client who told him so (saves with his password).
   var VIEW_ONLY = REACT && !!OWNER_KEY;
   var PAGE = String(D.page || location.pathname.replace(/\/+$/, '').split('/').pop().replace(/\.html$/, '')).toLowerCase();
   var root = document.getElementById('app');
@@ -228,10 +229,11 @@
   function reactBlock(h){
     if(!REACT) return '';
     return '<div class="react' + (VIEW_ONLY ? ' view-only' : '') + '" data-home="' + h._id + '"><span class="react-q">' +
-        (VIEW_ONLY ? esc(D.client ? D.client + '\u2019s reaction' : 'Client reaction') + ' <small>View only</small>' : 'What do you think?') + '</span>' +
+        (VIEW_ONLY ? esc(D.client ? D.client + '\u2019s reaction' : 'Client reaction') + ' <small>You can mark Not for me</small>' : 'What do you think?') + '</span>' +
       '<div class="react-btns">' + ['love', 'pass'].map(function(k){
-        return '<button type="button" class="react-btn" data-r="' + k + '" aria-pressed="false"' + (VIEW_ONLY ? ' disabled' : '') + '><span aria-hidden="true">' + REACTION[k].icon + '</span>' + REACTION[k].label + '</button>';
+        return '<button type="button" class="react-btn" data-r="' + k + '" aria-pressed="false"' + (VIEW_ONLY && k === 'love' ? ' disabled' : '') + '><span aria-hidden="true">' + REACTION[k].icon + '</span>' + REACTION[k].label + '</button>';
       }).join('') + '</div>' +
+      '<p class="react-by" hidden></p>' +
       '<form class="react-note" hidden><input type="text" maxlength="300" placeholder="Want to tell me why? (optional)" aria-label="Note for Joseph"><button type="submit" class="btn btn-soft">Send</button></form>' +
       '<p class="react-said" hidden></p><p class="react-err" hidden>That didn’t save. Check your connection and try again.</p></div>';
   }
@@ -480,25 +482,35 @@
         // note box: always open while editing; otherwise only after Love it / Not for me, until a note is saved
         form.hidden = VIEW_ONLY ? true : editing ? false : (!s.r || !!s.note);
         if(document.activeElement !== input) input.value = s.note || '';
+        var by = box.querySelector('.react-by');
+        by.hidden = s.by !== 'joseph';
+        by.textContent = VIEW_ONLY ? 'You marked this one' : 'Joseph marked this one';
         said.hidden = !s.note || editing;
         if(s.note) said.innerHTML = '“' + esc(s.note) + '” <span>— ' + esc(D.client || 'You') +
           (s.at ? ', ' + new Date(s.at).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '') + '</span>' +
           (VIEW_ONLY ? '' : ' <button type="button" class="react-edit">Edit</button>');
       });
     }
-    function save(id, r, note){
+    // asJoseph: his Not for me (or undo) from a device signed in on /admin; the client's note is left alone.
+    function save(id, r, note, asJoseph){
       var prev = state[id], mine = seq[id] = (seq[id] || 0) + 1;    // newest tap wins if replies arrive out of order
-      state[id] = (r || note) ? {r:r, note:note, at:new Date().toISOString()} : undefined;
+      state[id] = (r || note) ? {r:r, note:note, at:new Date().toISOString(), by: asJoseph && r ? 'joseph' : prev && prev.r === r ? prev.by : undefined} : undefined;
       paint();
       var errs = document.querySelectorAll('.react[data-home="' + id + '"] .react-err');
       errs.forEach(function(e){ e.hidden = true; });
-      fetch('/api/reactions', {method:'POST', headers:{'Content-Type':'application/json'}, keepalive:true, body: JSON.stringify({page:PAGE, home:id, r:r, note:note})})
+      var headers = {'Content-Type':'application/json'}, body = {page:PAGE, home:id, r:r, note:note};
+      if(asJoseph){ headers.Authorization = 'Bearer ' + OWNER_KEY; body.by = 'joseph'; }
+      fetch('/api/reactions', {method:'POST', headers:headers, keepalive:true, body: JSON.stringify(body)})
         .then(function(res){ if(!res.ok) throw new Error(res.status); return res.json(); })
         .then(function(d){ if(mine !== seq[id]) return; state[id] = d.reaction || undefined; paint(); })
         .catch(function(){ if(mine !== seq[id]) return; state[id] = prev; paint(); errs.forEach(function(e){ e.hidden = false; }); });
     }
     document.addEventListener('click', function(e){
-      if(VIEW_ONLY) return;
+      if(VIEW_ONLY){
+        var mark = e.target.closest('.react-btn[data-r=pass]');
+        if(mark){ var mid = mark.closest('.react').dataset.home, mcur = state[mid] || {}; save(mid, mcur.r === 'pass' ? '' : 'pass', mcur.note || '', true); }
+        return;
+      }
       var btn = e.target.closest('.react-btn');
       if(btn){
         var id = btn.closest('.react').dataset.home, cur = state[id] || {};

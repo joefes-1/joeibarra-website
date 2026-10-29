@@ -51,10 +51,18 @@ class FakeApi:
             return await route.fulfill(status=200, content_type='application/json', body=json.dumps({'reactions': out, 'removedAt': self.removed_at, 'tourPicks': self.tour_picks}))
         b = json.loads(req.post_data)
         key = b['page'] + '/' + b['home']
+        prev = self.db.get(key) or {}
+        if b.get('by') == 'joseph':   # Joseph's Not for me: needs his password, keeps the client's note
+            if req.headers.get('authorization') != 'Bearer test-password':
+                return await route.fulfill(status=401, content_type='application/json', body='{"error":"locked"}')
+            if b['r'] == 'love': return await route.fulfill(status=400, body='{}')
+            b = {**b, 'note': prev.get('note', '')}
         if not b['r'] and not b.get('note'):
             self.db.pop(key, None)
             return await route.fulfill(status=200, content_type='application/json', body='{"ok":true,"reaction":null}')
         v = {'r': b['r'], 'note': b.get('note', ''), 'at': '2026-10-16T20:00:00Z'}
+        by = 'joseph' if b.get('by') == 'joseph' and b['r'] else prev.get('by') if prev.get('r') == b['r'] else None
+        if by: v['by'] = by
         self.db[key] = v
         return await route.fulfill(status=200, content_type='application/json', body=json.dumps({'ok': True, 'reaction': v}))
 
@@ -171,12 +179,12 @@ async def tours(browser, base):
     await p.wait_for_timeout(200)
     check('great yard' in await text(p), 'a tour note shows back on the page after saving')
     await p.context.close()
-    # Joseph (signed in on /admin on this device) sees reactions + notes but can't change them
+    # Joseph (signed in on /admin on this device) sees reactions + notes; the only thing he can change is Not for me
     api = FakeApi(); api.db['test-tour/TST50111'] = {'r': 'love', 'note': 'Love the yard', 'at': '2026-10-16T20:00:00Z'}
     ctx = await browser.new_context(viewport={'width': 390, 'height': 844})
     await ctx.add_init_script("localStorage.setItem('joeibarra-admin-key','test-password')")
     p = await ctx.new_page(); posts = []
-    p.on('request', lambda r: posts.append(r.url) if r.method == 'POST' and '/api/reactions' in r.url else None)
+    p.on('request', lambda r: posts.append((r.headers.get('authorization'), json.loads(r.post_data))) if r.method == 'POST' and '/api/reactions' in r.url else None)
     await p.route('**/api/reactions**', api.handle)
     await p.route('**/api/admin**', lambda r: r.fulfill(status=200, content_type='application/json', body='{"ok":true}'))
     await p.route(lambda u: not u.startswith(base), lambda r: r.abort())
@@ -184,13 +192,47 @@ async def tours(browser, base):
     await p.goto(base + '/tests/fixtures/tour.html'); await p.wait_for_timeout(400)
     box = p.locator('.home >> nth=0').locator('.react')
     t = (await box.inner_text()).lower()
-    check('love the yard' in t and 'view only' in t and "tess" in t, f'Joseph sees the client reaction + note, labeled view only (got {t!r})')
-    check(await box.locator('.react-btn[data-r=love]').get_attribute('aria-pressed') == 'true' and await box.locator('.react-btn[disabled]').count() == 2,
-          'reaction buttons show the client pick but are disabled for Joseph')
-    await box.locator('.react-btn[data-r=pass]').click(force=True); await p.wait_for_timeout(200)
-    check(not posts and await box.locator('.react-note').is_hidden() and await box.locator('.react-edit').count() == 0,
-          'Joseph tapping does nothing: no save, no note box, no Edit')
+    check('love the yard' in t and 'you can mark not for me' in t and "tess" in t, f'Joseph sees the client reaction + note, labeled as theirs (got {t!r})')
+    check(await box.locator('.react-btn[data-r=love]').get_attribute('aria-pressed') == 'true' and await box.locator('.react-btn[data-r=love][disabled]').count() == 1
+          and await box.locator('.react-btn[data-r=pass][disabled]').count() == 0, 'Love it is disabled for Joseph; Not for me is tappable')
+    await box.locator('.react-btn[data-r=love]').click(force=True); await p.wait_for_timeout(200)
+    check(not posts, 'Joseph tapping Love it does nothing')
+    await box.locator('.react-btn[data-r=pass]').click(); await p.wait_for_timeout(300)
+    t = (await box.inner_text()).lower()
+    check(len(posts) == 1 and posts[0][0] == 'Bearer test-password' and posts[0][1].get('by') == 'joseph' and posts[0][1]['r'] == 'pass',
+          f'Joseph marking Not for me saves with his password, marked as his (got {posts})')
+    check(await box.locator('.react-btn[data-r=pass]').get_attribute('aria-pressed') == 'true' and 'you marked this one' in t and 'love the yard' in t
+          and api.db['test-tour/TST50111'].get('note') == 'Love the yard', 'the home shows Not for me, labeled as his, and the client note stays')
+    check(await box.locator('.react-note').is_hidden() and await box.locator('.react-edit').count() == 0, 'Joseph still gets no note box or Edit')
+    await box.locator('.react-btn[data-r=pass]').click(); await p.wait_for_timeout(300)
+    check(len(posts) == 2 and posts[1][1]['r'] == '' and api.db['test-tour/TST50111'].get('r') == '' and await box.locator('.react-by').is_hidden(),
+          'tapping Not for me again undoes it (the note stays)')
     await ctx.close()
+    # A stale password on his device: the mark rolls back and shows the error
+    api = FakeApi()
+    ctx = await browser.new_context(viewport={'width': 390, 'height': 844})
+    await ctx.add_init_script("localStorage.setItem('joeibarra-admin-key','old-password')")
+    p = await ctx.new_page()
+    await p.route('**/api/reactions**', api.handle)
+    await p.route('**/api/admin**', lambda r: r.fulfill(status=401, content_type='application/json', body='{"error":"locked"}'))
+    await p.route(lambda u: not u.startswith(base), lambda r: r.abort())
+    await p.clock.set_fixed_time(dt.datetime(2026, 10, 16, 18, 0))
+    await p.goto(base + '/tests/fixtures/tour.html'); await p.wait_for_timeout(400)
+    box = p.locator('.home >> nth=0').locator('.react')
+    await box.locator('.react-btn[data-r=pass]').click(); await p.wait_for_timeout(300)
+    check(await box.locator('.react-btn[data-r=pass]').get_attribute('aria-pressed') == 'false' and await box.locator('.react-err').is_visible() and not api.db,
+          'wrong password: Not for me rolls back and shows the error')
+    await ctx.close()
+    # The client sees Joseph's mark, and picking for themselves makes it theirs
+    api = FakeApi(); api.db['test-tour/TST50111'] = {'r': 'pass', 'note': '', 'at': '2026-10-16T20:00:00Z', 'by': 'joseph'}
+    p = await open_page(browser, base, '/tests/fixtures/tour.html', dt.datetime(2026, 10, 16, 18, 0), device='mouse-narrow', api=api)
+    box = p.locator('.home >> nth=0').locator('.react')
+    check(await box.locator('.react-btn[data-r=pass]').get_attribute('aria-pressed') == 'true' and 'joseph marked this one' in (await box.inner_text()).lower(),
+          'the client sees Not for me, labeled as marked by Joseph')
+    await box.locator('.react-btn[data-r=love]').click(); await p.wait_for_timeout(300)
+    check(api.db['test-tour/TST50111']['r'] == 'love' and 'by' not in api.db['test-tour/TST50111'] and await box.locator('.react-by').is_hidden(),
+          'the client can still change it, and then it is their own reaction')
+    await p.context.close()
     print('Tours: every stop time on a real tour page is written HH:MM (24h)')
     for f in glob.glob(os.path.join(ROOT, 'homes', '*-tour.html')):
         for t in re.findall(r'\btime:\s*"([^"]*)"', open(f).read()):

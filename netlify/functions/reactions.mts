@@ -1,13 +1,17 @@
 // Client reactions (Love it / Not for me + optional note) on /homes pages.
-// GET  /api/reactions?page=dolce-ibarra            -> { reactions: { <homeId>: { r, note, at } }, removedAt }
+// GET  /api/reactions?page=dolce-ibarra            -> { reactions: { <homeId>: { r, note, at, by? } }, removedAt }
 //      removedAt: when Joseph removed the page from /admin (null if not removed)
 //      tourPicks: home ids Joseph tapped for the next buyer tour (only shown to him; saving needs his password via /api/admin)
 // POST /api/reactions { page, home, r, note }      -> saves one home's reaction (r "" + no note = clear)
+// POST /api/reactions { page, home, r, by: "joseph" } + "Authorization: Bearer <password>"
+//      Joseph marks a home Not for me for the client (r "pass") or undoes it (r ""). Saved with by: "joseph";
+//      the client's note is kept as is and nothing goes to FUB. The client can still change it.
 // One blob per page+home.
 // Pages with a fubId (tours and homes pages; set in the page data, read here from the built directory,
 // never from the browser): when the client writes or changes a note on a home, it's added to their
 // Follow Up Boss profile as a note. Reactions with no note, and re-saves of the same note, don't.
 import { getStore } from "@netlify/blobs"
+import { createHash, timingSafeEqual } from "node:crypto"
 import type { Config } from "@netlify/functions"
 import directory from "../data/client-pages.json" with { type: "json" }
 import { addFubNote } from "../lib/fub-tools.ts"
@@ -47,6 +51,16 @@ const HOME_RE = /^[A-Za-z0-9-]{1,60}$/
 const json = (data: unknown, status = 200) =>
   Response.json(data, { status, headers: { "cache-control": "no-store" } })
 
+function passwordOk(req: Request) {
+  const expected = Netlify.env.get("ADMIN_PASSWORD") || ""
+  const given = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "")
+  if (!expected || !given) return false
+  return timingSafeEqual(createHash("sha256").update(given).digest(), createHash("sha256").update(expected).digest())
+}
+
+type Saved = { r: string; note: string; at: string; by?: string; fubNote?: string }
+const shown = (v: Saved) => ({ r: v.r, note: v.note, at: v.at, ...(v.by ? { by: v.by } : {}) })
+
 export default async (req: Request) => {
   const store = getStore({ name: "client-reactions", consistency: "strong" })
 
@@ -57,8 +71,8 @@ export default async (req: Request) => {
     const reactions: Record<string, unknown> = {}
     await Promise.all(
       blobs.map(async (b) => {
-        const value = (await store.get(b.key, { type: "json" })) as { r: string; note: string; at: string } | null
-        if (value) reactions[b.key.slice(page.length + 1)] = { r: value.r, note: value.note, at: value.at }
+        const value = (await store.get(b.key, { type: "json" })) as Saved | null
+        if (value) reactions[b.key.slice(page.length + 1)] = shown(value)
       })
     )
     const admin = getStore({ name: "client-admin", consistency: "strong" })
@@ -75,16 +89,32 @@ export default async (req: Request) => {
     if (!PAGE_RE.test(page) || !HOME_RE.test(home) || !REACTIONS.has(r)) return json({ error: "Bad request" }, 400)
 
     const key = `${page}/${home}`
+    if (body?.by === "joseph") {
+      if (!passwordOk(req)) return json({ error: "locked" }, 401)
+      if (r === "love") return json({ error: "Bad request" }, 400)   // he can only mark Not for me (or undo it)
+      const prev = (await store.get(key, { type: "json" })) as Saved | null
+      const kept = prev?.note || ""
+      if (!r && !kept) {
+        await store.delete(key)
+        return json({ ok: true, reaction: null })
+      }
+      const reaction: Saved = { r, note: kept, at: new Date().toISOString(), ...(r ? { by: "joseph" } : {}),
+        ...(prev?.fubNote ? { fubNote: prev.fubNote } : {}) }
+      await store.setJSON(key, reaction)
+      return json({ ok: true, reaction: shown(reaction) })
+    }
     if (!r && !note) {
       await store.delete(key)
       return json({ ok: true, reaction: null })
     }
-    const prev = (await store.get(key, { type: "json" })) as { fubNote?: string } | null
+    const prev = (await store.get(key, { type: "json" })) as Saved | null
     let fubNote = prev?.fubNote
     if (note && note !== fubNote && (await noteToFub(page, home, r, note, !!fubNote))) fubNote = note
-    const reaction = { r, note, at: new Date().toISOString(), ...(fubNote ? { fubNote } : {}) }
+    // Joseph's mark stays labeled while the client only edits their note; picking a reaction makes it theirs.
+    const by = prev?.by && prev.r === r ? prev.by : undefined
+    const reaction: Saved = { r, note, at: new Date().toISOString(), ...(by ? { by } : {}), ...(fubNote ? { fubNote } : {}) }
     await store.setJSON(key, reaction)
-    return json({ ok: true, reaction: { r, note, at: reaction.at } })
+    return json({ ok: true, reaction: shown(reaction) })
   }
 
   return json({ error: "Method not allowed" }, 405)

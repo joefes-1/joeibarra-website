@@ -377,9 +377,10 @@ async def tours(browser, base):
     p = await open_page(browser, base, 'tst-tour-one', dt.datetime(2026, 10, 24, 18, 10), tz='America/New_York')   # 11:10am Pacific
     bug(await p.locator('.home.now').count() == 1, 'client viewing from another time zone: the live "Now" stop is off by the time difference (dates/times read in the viewer\'s zone)')
     await p.context.close()
-    # tour picks never on tours; view-only on tours for Joseph
+    # tour picks never on tours; on tours Joseph can only mark Not for me
     p = await open_page(browser, base, 'tst-tour-one', owner=True)
-    check(await p.locator('.pick-bar').count() == 0 and await p.locator('.react-btn[disabled]').count() == 2, 'Joseph on a tour: view-only reactions, no tour-pick bar')
+    check(await p.locator('.pick-bar').count() == 0 and await p.locator('.react-btn[data-r=love][disabled]').count() == 1
+          and await p.locator('.react-btn[data-r=pass][disabled]').count() == 0, 'Joseph on a tour: Love it locked, Not for me open, no tour-pick bar')
     await p.context.close()
 
 

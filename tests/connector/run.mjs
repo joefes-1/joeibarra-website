@@ -232,6 +232,32 @@ ENV.FUB_API_KEY = 'fubkey'
 r = await react({ page: tourPg.page, home: tourHome.id, r: 'love', note: 'FUB is down' })
 check(fubNotes().length === 4, 'a note that failed to reach FUB is retried on the next save')
 
+// Joseph marks a home Not for me for the client (needs his password; keeps their note; nothing to FUB)
+const asJoseph = (body, pw = 'pw') => reactions(new Request(B + '/api/reactions', { method: 'POST',
+  headers: { 'content-type': 'application/json', ...(pw ? { authorization: 'Bearer ' + pw } : {}) }, body: JSON.stringify({ ...body, by: 'joseph' }) }))
+const showHome = showPg.listings[0], before = fubNotes().length
+const saved = async () => (await (await reactions(new Request(B + '/api/reactions?page=' + showPg.page))).json()).reactions[showHome.id]
+check((await asJoseph({ page: showPg.page, home: showHome.id, r: 'pass' }, '')).status === 401
+  && (await asJoseph({ page: showPg.page, home: showHome.id, r: 'pass' }, 'wrong')).status === 401, 'Joseph\'s mark without the right password: 401')
+check((await asJoseph({ page: showPg.page, home: showHome.id, r: 'love' })).status === 400, 'Joseph can\'t mark Love it for a client')
+r = await asJoseph({ page: showPg.page, home: showHome.id, r: 'pass', note: 'sneaky' })
+let sv = await saved()
+check(r.status === 200 && sv.r === 'pass' && sv.by === 'joseph' && sv.note === 'Too far from work' && fubNotes().length === before,
+  'Joseph\'s Not for me saves as his, keeps the client\'s note, sends nothing to FUB')
+await react({ page: showPg.page, home: showHome.id, r: 'pass', note: 'Too far from work, honestly' })
+sv = await saved()
+check(sv.by === 'joseph' && sv.note === 'Too far from work, honestly', 'client editing only their note keeps it labeled as Joseph\'s mark')
+await react({ page: showPg.page, home: showHome.id, r: 'love', note: 'Too far from work, honestly' })
+check(!('by' in await saved()), 'client picking a reaction makes it their own')
+await asJoseph({ page: showPg.page, home: showHome.id, r: 'pass' })
+await asJoseph({ page: showPg.page, home: showHome.id, r: '' })
+sv = await saved()
+check(sv.r === '' && !('by' in sv) && sv.note === 'Too far from work, honestly', 'Joseph undoing his mark clears it and keeps the note')
+const lone = showPg.listings[1]
+await asJoseph({ page: showPg.page, home: lone.id, r: 'pass' })
+await asJoseph({ page: showPg.page, home: lone.id, r: '' })
+check(!(lone.id in (await (await reactions(new Request(B + '/api/reactions?page=' + showPg.page))).json()).reactions), 'undo with no note removes it entirely')
+
 globalThis.fetch = realFetch
 fs.rmSync(out, { recursive: true, force: true })
 console.log(`connector: ${pass} passed, ${fail} failed`)
