@@ -252,6 +252,110 @@
    ]
   },
   {
+   "page": "mae-alfaddaghi",
+   "path": "/homes/mae-alfaddaghi",
+   "mode": "showcase",
+   "client": "Mae",
+   "fubId": 8143,
+   "title": "A few multi-unit homes worth a look",
+   "created": "2026-11-04",
+   "date": null,
+   "lastAdded": null,
+   "expires": "2026-12-04",
+   "listings": [
+    {
+     "id": "OC25071960",
+     "address": "408 S Flower Street",
+     "city": "Santa Ana, CA 92703",
+     "price": 999999,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/960/OC25071960_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "PW25046228",
+     "address": "913 W Bishop Street",
+     "city": "Santa Ana, CA 92703",
+     "price": 1049000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/228/PW25046228_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "PW26133497",
+     "address": "530 S Broadway",
+     "city": "Santa Ana, CA 92701",
+     "price": 1150000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/497/PW26133497_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "OC26226872",
+     "address": "816 N Jackson",
+     "city": "Santa Ana, CA 92703",
+     "price": 990000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/872/OC26226872_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "PW26142181",
+     "address": "335 Beverly",
+     "city": "Santa Ana, CA 92701",
+     "price": 1060000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/181/PW26142181_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "NP26218335",
+     "address": "1516 W 5th",
+     "city": "Santa Ana, CA 92703",
+     "price": 1180000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/335/NP26218335_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "IV26236745",
+     "address": "407 N Jackson Street",
+     "city": "Santa Ana, CA 92703",
+     "price": 995000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/745/IV26236745_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "PW26170158",
+     "address": "1813 Cedar",
+     "city": "Santa Ana, CA 92707",
+     "price": 1025000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/158/PW26170158_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "PW26118319",
+     "address": "1514 E 4th",
+     "city": "Santa Ana, CA 92701",
+     "price": 1100000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/319/PW26118319_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "PW26048129",
+     "address": "626 N Grand",
+     "city": "Santa Ana, CA 92701",
+     "price": 1200000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/129/PW26048129_0.jpg",
+     "added": null,
+     "time": null
+    }
+   ]
+  },
+  {
    "page": "smita",
    "path": "/homes/smita",
    "mode": "showcase",
