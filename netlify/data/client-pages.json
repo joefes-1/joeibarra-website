@@ -477,14 +477,59 @@
    "title": "A few homes worth a look",
    "created": "2026-10-29",
    "date": null,
-   "lastAdded": null,
-   "expires": "2026-11-28",
+   "lastAdded": "2026-11-13T12:50",
+   "expires": "2026-12-13",
    "listings": [
+    {
+     "id": "26107681",
+     "address": "2611 Sutters Mill Drive",
+     "city": "Diamond Bar, CA 91765",
+     "price": 1249999,
+     "photo": "https://ssl.cdn-redfin.com/photo/40/bigphoto/681/26107681_0.jpg",
+     "added": "2026-11-13T12:50",
+     "time": null
+    },
+    {
+     "id": "OC26236327",
+     "address": "22609 Mountain Laurel Way",
+     "city": "Diamond Bar, CA 91765",
+     "price": 1250000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/327/OC26236327_0.jpg",
+     "added": "2026-11-13T12:50",
+     "time": null
+    },
+    {
+     "id": "WS26243097",
+     "address": "20132 Emerald Meadow Drive",
+     "city": "Walnut, CA 91789",
+     "price": 1200000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/097/WS26243097_0.jpg",
+     "added": "2026-11-13T12:50",
+     "time": null
+    },
+    {
+     "id": "WS26242049",
+     "address": "418 Willapa Lane",
+     "city": "Diamond Bar, CA 91765",
+     "price": 1160000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/049/WS26242049_0.jpg",
+     "added": "2026-11-13T12:50",
+     "time": null
+    },
+    {
+     "id": "OC26241109",
+     "address": "233 N Platina Drive",
+     "city": "Diamond Bar, CA 91765",
+     "price": 1249000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/109/OC26241109_0.jpg",
+     "added": "2026-11-13T12:50",
+     "time": null
+    },
     {
      "id": "TR26228003",
      "address": "21116 Silver Cloud Drive",
      "city": "Diamond Bar, CA 91765",
-     "price": 1175000,
+     "price": 1125000,
      "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/003/TR26228003_0.jpg",
      "added": null,
      "time": null
