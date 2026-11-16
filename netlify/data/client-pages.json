@@ -179,6 +179,83 @@
    ]
   },
   {
+   "page": "ivan-de-la-cruz",
+   "path": "/homes/ivan-de-la-cruz",
+   "mode": "showcase",
+   "client": "Ivan",
+   "fubId": 5127,
+   "title": "A few Santa Ana houses worth a look",
+   "created": "2026-11-16",
+   "date": null,
+   "lastAdded": null,
+   "expires": "2026-12-16",
+   "listings": [
+    {
+     "id": "PW26205293",
+     "address": "1920 S Parton Street",
+     "city": "Santa Ana, CA 92707",
+     "price": 780000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/293/PW26205293_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "PW26202448",
+     "address": "1335 S Douglas Street",
+     "city": "Santa Ana, CA 92704",
+     "price": 799900,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/448/PW26202448_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "CV26242078",
+     "address": "1122 Kilson",
+     "city": "Santa Ana, CA 92701",
+     "price": 819999,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/078/CV26242078_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "PW26195694",
+     "address": "1906 S Broadway",
+     "city": "Santa Ana, CA 92707",
+     "price": 820000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/694/PW26195694_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "OC26243901",
+     "address": "2114 W 12th Street",
+     "city": "Santa Ana, CA 92703",
+     "price": 775000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/901/OC26243901_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "PW26242015",
+     "address": "1517 Aspen",
+     "city": "Santa Ana, CA 92705",
+     "price": 800000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/015/PW26242015_0.jpg",
+     "added": null,
+     "time": null
+    },
+    {
+     "id": "OC26170342",
+     "address": "1127 W 5th",
+     "city": "Santa Ana, CA 92703",
+     "price": 825000,
+     "photo": "https://ssl.cdn-redfin.com/photo/45/bigphoto/342/OC26170342_0.jpg",
+     "added": null,
+     "time": null
+    }
+   ]
+  },
+  {
    "page": "junko-miyamoto",
    "path": "/homes/junko-miyamoto",
    "mode": "showcase",
